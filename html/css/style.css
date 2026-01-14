@@ -1,0 +1,1533 @@
+/* DPS Transit NUI Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: transparent;
+    color: #fff;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Schedule Board */
+.schedule-board {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    border: 2px solid #0f3460;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+.board-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #0f3460;
+    border-bottom: 2px solid #e94560;
+}
+
+.station-name {
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    letter-spacing: 2px;
+}
+
+.current-time {
+    font-size: 28px;
+    font-weight: bold;
+    color: #e94560;
+    font-family: 'Courier New', monospace;
+}
+
+.board-content {
+    padding: 20px;
+}
+
+.arrivals-header {
+    display: flex;
+    padding: 10px 0;
+    border-bottom: 1px solid #0f3460;
+    color: #888;
+    font-size: 12px;
+    letter-spacing: 1px;
+}
+
+.arrivals-header .col-dest {
+    flex: 2;
+}
+
+.arrivals-header .col-eta {
+    flex: 1;
+    text-align: center;
+}
+
+.arrivals-header .col-status {
+    flex: 1;
+    text-align: right;
+}
+
+.arrivals-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.arrival-row {
+    display: flex;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: background 0.2s;
+}
+
+.arrival-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.arrival-row .col-dest {
+    flex: 2;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.arrival-row .col-eta {
+    flex: 1;
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: #4ecca3;
+}
+
+.arrival-row .col-eta.arriving {
+    color: #e94560;
+    animation: pulse 1s infinite;
+}
+
+.arrival-row .col-status {
+    flex: 1;
+    text-align: right;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.arrival-row .col-status.boarding {
+    color: #4ecca3;
+}
+
+.arrival-row .col-status.approaching {
+    color: #f9ed69;
+}
+
+.arrival-row .col-status.running {
+    color: #888;
+}
+
+/* Empty State */
+.arrival-row.empty-state {
+    border-bottom: none;
+    padding: 40px 0;
+}
+
+.empty-message {
+    width: 100%;
+    text-align: center;
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.7;
+}
+
+.empty-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.empty-subtitle {
+    font-size: 14px;
+    color: #888;
+}
+
+/* Freight indicator */
+.arrival-row .col-dest .freight-tag {
+    font-size: 10px;
+    color: #f9ed69;
+    background: rgba(249, 237, 105, 0.2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
+}
+
+/* Waiting at junction status */
+.arrival-row .col-status.waiting_junction {
+    color: #f9ed69;
+}
+
+/* Emergency alert overlay */
+.emergency-alert {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, #c0392b, #e74c3c);
+    padding: 15px 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(192, 57, 43, 0.5);
+    z-index: 1000;
+    animation: alertPulse 2s infinite;
+}
+
+.emergency-alert .alert-station {
+    font-size: 12px;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.emergency-alert .alert-message {
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+@keyframes alertPulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(192, 57, 43, 0.5); }
+    50% { box-shadow: 0 4px 30px rgba(192, 57, 43, 0.8); }
+}
+
+.board-footer {
+    padding: 15px 20px;
+    background: #0f3460;
+    border-top: 2px solid #e94560;
+}
+
+.announcement {
+    font-size: 14px;
+    color: #f9ed69;
+    text-align: center;
+    animation: scroll 15s linear infinite;
+}
+
+/* Ticket Display */
+.ticket-display {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+}
+
+.ticket {
+    width: 300px;
+    background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    color: #333;
+}
+
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: linear-gradient(90deg, #0f3460 0%, #16213e 100%);
+    color: #fff;
+}
+
+.transit-logo {
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 3px;
+}
+
+.ticket-type {
+    font-size: 10px;
+    letter-spacing: 2px;
+    opacity: 0.8;
+}
+
+.ticket-body {
+    padding: 20px;
+}
+
+.route {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.station {
+    text-align: center;
+}
+
+.station .label {
+    display: block;
+    font-size: 10px;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.station .name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #0f3460;
+}
+
+.route-arrow {
+    font-size: 24px;
+    color: #e94560;
+}
+
+.ticket-details {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px dashed #ccc;
+    padding-top: 15px;
+}
+
+.detail {
+    text-align: center;
+}
+
+.detail .label {
+    display: block;
+    font-size: 10px;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.detail .value {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.ticket-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: #f5f5f5;
+    border-top: 1px solid #ddd;
+}
+
+.ticket-id {
+    font-size: 10px;
+    color: #888;
+    font-family: 'Courier New', monospace;
+}
+
+.barcode {
+    font-family: 'Libre Barcode 39', cursive;
+    font-size: 24px;
+    color: #333;
+    letter-spacing: -2px;
+}
+
+/* Animations */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes scroll {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
+
+/* Scrollbar */
+.arrivals-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.arrivals-list::-webkit-scrollbar-track {
+    background: #1a1a2e;
+}
+
+.arrivals-list::-webkit-scrollbar-thumb {
+    background: #0f3460;
+    border-radius: 3px;
+}
+
+.arrivals-list::-webkit-scrollbar-thumb:hover {
+    background: #e94560;
+}
+
+/* ============================================
+   PASSENGER ANNOUNCEMENT OVERLAY
+   ============================================ */
+
+.passenger-announcement {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    padding-top: 80px;
+    pointer-events: none;
+    z-index: 2000;
+}
+
+.announcement-content {
+    background: linear-gradient(180deg, rgba(15, 52, 96, 0.95) 0%, rgba(26, 26, 46, 0.95) 100%);
+    border: 2px solid #e94560;
+    border-radius: 12px;
+    padding: 25px 50px;
+    text-align: center;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7),
+                0 0 30px rgba(233, 69, 96, 0.3);
+    animation: slideDown 0.5s ease-out;
+    min-width: 400px;
+}
+
+.announcement-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+.announcement-title {
+    font-size: 14px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+}
+
+.announcement-station {
+    font-size: 32px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(255, 255, 255, 0.3);
+    margin-bottom: 5px;
+}
+
+.announcement-subtitle {
+    font-size: 16px;
+    color: #4ecca3;
+    letter-spacing: 1px;
+}
+
+/* Announcement Types */
+.passenger-announcement.type-approach .announcement-content {
+    border-color: #f9ed69;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7),
+                0 0 30px rgba(249, 237, 105, 0.3);
+}
+
+.passenger-announcement.type-approach .announcement-icon {
+    color: #f9ed69;
+}
+
+.passenger-announcement.type-arrival .announcement-content {
+    border-color: #4ecca3;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7),
+                0 0 30px rgba(78, 204, 163, 0.4);
+}
+
+.passenger-announcement.type-arrival .announcement-icon {
+    color: #4ecca3;
+}
+
+.passenger-announcement.type-arrival .announcement-station {
+    color: #4ecca3;
+}
+
+.passenger-announcement.type-departure .announcement-content {
+    border-color: #e94560;
+}
+
+.passenger-announcement.type-departure .announcement-subtitle {
+    color: #e94560;
+}
+
+.passenger-announcement.type-held .announcement-content {
+    border-color: #e74c3c;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7),
+                0 0 30px rgba(231, 76, 60, 0.5);
+    animation: slideDown 0.5s ease-out, holdPulse 2s ease-in-out infinite;
+}
+
+.passenger-announcement.type-held .announcement-icon {
+    color: #e74c3c;
+}
+
+.passenger-announcement.type-held .announcement-station {
+    color: #e74c3c;
+}
+
+/* Dispatcher Hold Type - Purple/Authority color */
+.passenger-announcement.type-dispatcher .announcement-content {
+    border-color: #9b59b6;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7),
+                0 0 30px rgba(155, 89, 182, 0.6);
+    animation: slideDown 0.5s ease-out, dispatcherPulse 1.5s ease-in-out infinite;
+}
+
+.passenger-announcement.type-dispatcher .announcement-icon {
+    color: #9b59b6;
+}
+
+.passenger-announcement.type-dispatcher .announcement-title {
+    color: #9b59b6;
+}
+
+.passenger-announcement.type-dispatcher .announcement-station {
+    color: #9b59b6;
+}
+
+@keyframes dispatcherPulse {
+    0%, 100% {
+        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7),
+                    0 0 30px rgba(155, 89, 182, 0.6);
+        border-color: #9b59b6;
+    }
+    50% {
+        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7),
+                    0 0 50px rgba(155, 89, 182, 0.9);
+        border-color: #8e44ad;
+    }
+}
+
+/* Signal Hold Banner (Schedule Board) */
+.signal-hold-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    background: rgba(231, 76, 60, 0.15);
+    border: 1px solid #e74c3c;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    animation: holdBannerPulse 2s ease-in-out infinite;
+}
+
+.signal-hold-banner.hidden {
+    display: none;
+}
+
+.signal-hold-banner .signal-hold-icon {
+    font-size: 24px;
+}
+
+.signal-hold-banner .signal-hold-content {
+    flex: 1;
+}
+
+.signal-hold-banner .signal-hold-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: #e74c3c;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.signal-hold-banner .signal-hold-segment {
+    font-size: 14px;
+    color: #fff;
+    margin-top: 2px;
+}
+
+.signal-hold-banner .signal-hold-reason {
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+}
+
+@keyframes holdBannerPulse {
+    0%, 100% {
+        background: rgba(231, 76, 60, 0.15);
+        border-color: #e74c3c;
+    }
+    50% {
+        background: rgba(231, 76, 60, 0.25);
+        border-color: #c0392b;
+    }
+}
+
+/* Dispatcher Hold Banner Variant */
+.signal-hold-banner.dispatcher-hold {
+    background: rgba(155, 89, 182, 0.15);
+    border-color: #9b59b6;
+    animation: dispatcherBannerPulse 1.5s ease-in-out infinite;
+}
+
+.signal-hold-banner.dispatcher-hold .signal-hold-title {
+    color: #9b59b6;
+}
+
+@keyframes dispatcherBannerPulse {
+    0%, 100% {
+        background: rgba(155, 89, 182, 0.15);
+        border-color: #9b59b6;
+    }
+    50% {
+        background: rgba(155, 89, 182, 0.3);
+        border-color: #8e44ad;
+    }
+}
+
+/* Fade out animation */
+.passenger-announcement.fade-out .announcement-content {
+    animation: slideUp 0.4s ease-in forwards;
+}
+
+/* Keyframe Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+}
+
+@keyframes iconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes holdPulse {
+    0%, 100% { box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(231, 76, 60, 0.5); }
+    50% { box-shadow: 0 10px 50px rgba(0, 0, 0, 0.7), 0 0 50px rgba(231, 76, 60, 0.8); }
+}
+
+/* ETA Status Styles for Held/Caution */
+.eta-held {
+    color: #e74c3c !important;
+    animation: pulse 1s infinite;
+}
+
+.eta-caution {
+    color: #f9ed69 !important;
+}
+
+.status-held {
+    color: #e74c3c !important;
+}
+
+.status-caution {
+    color: #f9ed69 !important;
+}
+
+.train-held {
+    background: rgba(231, 76, 60, 0.1) !important;
+}
+
+.train-caution {
+    background: rgba(249, 237, 105, 0.05) !important;
+}
+
+/* ============================================
+   DISPATCHER CONTROL PANEL
+   ============================================ */
+
+.dispatcher-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    max-height: 90vh;
+    background: linear-gradient(180deg, #0a0a1a 0%, #1a1a2e 100%);
+    border: 2px solid #e94560;
+    border-radius: 12px;
+    box-shadow: 0 15px 60px rgba(0, 0, 0, 0.8),
+                0 0 40px rgba(233, 69, 96, 0.2);
+    overflow: hidden;
+    z-index: 1500;
+}
+
+.dispatcher-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    background: linear-gradient(90deg, #e94560 0%, #0f3460 100%);
+    border-bottom: 2px solid #e94560;
+}
+
+.dispatcher-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+.dispatch-icon {
+    margin-right: 10px;
+    font-size: 20px;
+}
+
+.dispatcher-time {
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.dispatcher-content {
+    padding: 20px 25px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Track Sections */
+.track-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: rgba(15, 52, 96, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(78, 204, 163, 0.3);
+}
+
+.track-section.freight-section {
+    border-color: rgba(249, 237, 105, 0.3);
+    background: rgba(249, 237, 105, 0.05);
+}
+
+.track-label {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.track-id {
+    font-size: 14px;
+    font-weight: bold;
+    color: #4ecca3;
+    background: rgba(78, 204, 163, 0.2);
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+}
+
+.freight-section .track-id {
+    color: #f9ed69;
+    background: rgba(249, 237, 105, 0.2);
+}
+
+.track-name {
+    font-size: 12px;
+    color: #888;
+    letter-spacing: 1px;
+}
+
+/* Track Schematic */
+.track-schematic {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+}
+
+.segment {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.segment:hover {
+    transform: scale(1.1);
+}
+
+.segment-block {
+    width: 50px;
+    height: 30px;
+    background: #2d2d4a;
+    border: 2px solid #444;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+/* Segment States */
+.segment-block.empty {
+    background: #2d2d4a;
+    border-color: #444;
+}
+
+.segment-block.passenger {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    border-color: #4ecca3;
+    box-shadow: 0 0 15px rgba(78, 204, 163, 0.5);
+}
+
+.segment-block.freight {
+    background: linear-gradient(135deg, #d68910 0%, #f9ed69 100%);
+    border-color: #f9ed69;
+    box-shadow: 0 0 15px rgba(249, 237, 105, 0.5);
+}
+
+.segment-block.held {
+    background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+    border-color: #e74c3c;
+    box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+    animation: segmentPulse 1s infinite;
+}
+
+.segment-block.curve-warning {
+    border-style: dashed;
+}
+
+.segment-block.curve-warning::after {
+    content: '⚠';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 12px;
+}
+
+/* Signal indicator dot */
+.segment-block::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #27ae60;
+    box-shadow: 0 0 5px #27ae60;
+}
+
+.segment-block.held::before {
+    background: #e74c3c;
+    box-shadow: 0 0 5px #e74c3c;
+}
+
+.segment-block.caution::before {
+    background: #f9ed69;
+    box-shadow: 0 0 5px #f9ed69;
+}
+
+.segment-label {
+    margin-top: 8px;
+    font-size: 10px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.segment-connector {
+    width: 20px;
+    height: 3px;
+    background: linear-gradient(90deg, #444 0%, #666 50%, #444 100%);
+    margin: 0 2px;
+    margin-bottom: 18px;
+}
+
+@keyframes segmentPulse {
+    0%, 100% { box-shadow: 0 0 15px rgba(231, 76, 60, 0.5); }
+    50% { box-shadow: 0 0 25px rgba(231, 76, 60, 0.8); }
+}
+
+/* Train List */
+.dispatcher-trains {
+    padding: 15px 25px;
+    border-top: 1px solid #0f3460;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.trains-header {
+    font-size: 12px;
+    color: #888;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+}
+
+.trains-list {
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.train-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(15, 52, 96, 0.3);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    border-left: 3px solid #4ecca3;
+}
+
+.train-item.freight {
+    border-left-color: #f9ed69;
+}
+
+.train-item.held {
+    border-left-color: #e74c3c;
+    background: rgba(231, 76, 60, 0.1);
+}
+
+.train-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.train-id {
+    font-size: 12px;
+    font-weight: bold;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+}
+
+.train-type {
+    font-size: 10px;
+    color: #4ecca3;
+    background: rgba(78, 204, 163, 0.2);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.train-item.freight .train-type {
+    color: #f9ed69;
+    background: rgba(249, 237, 105, 0.2);
+}
+
+.train-location {
+    font-size: 11px;
+    color: #888;
+}
+
+.train-status {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 3px;
+}
+
+.train-status.running {
+    color: #4ecca3;
+    background: rgba(78, 204, 163, 0.2);
+}
+
+.train-status.held {
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.2);
+}
+
+.train-status.boarding {
+    color: #3498db;
+    background: rgba(52, 152, 219, 0.2);
+}
+
+/* Legend */
+.dispatcher-legend {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    padding: 12px 25px;
+    border-top: 1px solid #0f3460;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #888;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid #444;
+}
+
+.legend-color.empty {
+    background: #2d2d4a;
+}
+
+.legend-color.passenger {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    border-color: #4ecca3;
+}
+
+.legend-color.freight {
+    background: linear-gradient(135deg, #d68910 0%, #f9ed69 100%);
+    border-color: #f9ed69;
+}
+
+.legend-color.held {
+    background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+    border-color: #e74c3c;
+}
+
+/* Footer */
+.dispatcher-footer {
+    padding: 12px 25px;
+    text-align: center;
+    font-size: 11px;
+    color: #666;
+    background: #0a0a1a;
+    border-top: 1px solid #0f3460;
+}
+
+.key-hint {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #0f3460;
+    border: 1px solid #4ecca3;
+    border-radius: 3px;
+    color: #4ecca3;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+}
+
+/* Dispatcher scrollbar */
+.dispatcher-content::-webkit-scrollbar,
+.trains-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dispatcher-content::-webkit-scrollbar-track,
+.trains-list::-webkit-scrollbar-track {
+    background: #0a0a1a;
+}
+
+.dispatcher-content::-webkit-scrollbar-thumb,
+.trains-list::-webkit-scrollbar-thumb {
+    background: #0f3460;
+    border-radius: 3px;
+}
+
+.dispatcher-content::-webkit-scrollbar-thumb:hover,
+.trains-list::-webkit-scrollbar-thumb:hover {
+    background: #e94560;
+}
+
+/* ============================================
+   INTERACTIVE SELECTION & TOOLTIPS
+   ============================================ */
+
+/* Segment hover effect */
+.segment {
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.segment:hover {
+    transform: scale(1.1);
+}
+
+.segment:hover .segment-block {
+    box-shadow: 0 0 20px rgba(78, 204, 163, 0.6);
+}
+
+/* Selected segment highlight */
+.segment.selected .segment-block {
+    box-shadow: 0 0 25px rgba(233, 69, 96, 0.8), 0 0 50px rgba(233, 69, 96, 0.4);
+    border-color: #e94560 !important;
+    animation: selectedPulse 1.5s infinite;
+}
+
+@keyframes selectedPulse {
+    0%, 100% {
+        box-shadow: 0 0 25px rgba(233, 69, 96, 0.8), 0 0 50px rgba(233, 69, 96, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 35px rgba(233, 69, 96, 1), 0 0 70px rgba(233, 69, 96, 0.6);
+    }
+}
+
+/* Train item hover and selection */
+.train-item {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.train-item:hover {
+    background: rgba(15, 52, 96, 0.6);
+    transform: translateX(5px);
+}
+
+.train-item.active {
+    background: rgba(233, 69, 96, 0.2);
+    border-left-color: #e94560 !important;
+    box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
+}
+
+.train-item.active .train-id {
+    color: #e94560;
+}
+
+/* Segment tooltip */
+.segment-tooltip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 10, 26, 0.95);
+    border: 1px solid #4ecca3;
+    border-radius: 6px;
+    padding: 10px 14px;
+    min-width: 160px;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    pointer-events: none;
+}
+
+.segment:hover .segment-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.segment-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #4ecca3;
+}
+
+.tooltip-header {
+    font-size: 11px;
+    color: #4ecca3;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #0f3460;
+}
+
+.tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.tooltip-row:last-child {
+    margin-bottom: 0;
+}
+
+.tooltip-label {
+    color: #888;
+}
+
+.tooltip-value {
+    color: #fff;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+}
+
+.tooltip-value.passenger {
+    color: #4ecca3;
+}
+
+.tooltip-value.freight {
+    color: #f9ed69;
+}
+
+.tooltip-value.held {
+    color: #e74c3c;
+}
+
+/* Emergency stop button */
+.train-actions {
+    display: flex;
+    gap: 6px;
+    margin-left: 10px;
+}
+
+.btn-emergency {
+    background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+    border: 1px solid #e74c3c;
+    color: #fff;
+    font-size: 9px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+}
+
+.btn-emergency:hover {
+    background: linear-gradient(135deg, #e74c3c 0%, #ff6b6b 100%);
+    box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+    transform: scale(1.05);
+}
+
+.btn-emergency:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-emergency.active {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    border-color: #2ecc71;
+    animation: none;
+}
+
+/* Confirmation modal */
+.confirm-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+}
+
+.confirm-modal.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.confirm-dialog {
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    border: 2px solid #e74c3c;
+    border-radius: 10px;
+    padding: 25px;
+    max-width: 400px;
+    text-align: center;
+    animation: modalSlide 0.3s ease;
+}
+
+@keyframes modalSlide {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.confirm-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.confirm-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #e74c3c;
+    margin-bottom: 10px;
+}
+
+.confirm-message {
+    font-size: 14px;
+    color: #ccc;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.confirm-train-id {
+    font-family: 'Courier New', monospace;
+    color: #fff;
+    background: #0f3460;
+    padding: 2px 8px;
+    border-radius: 3px;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn-confirm {
+    padding: 10px 25px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-confirm.danger {
+    background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+    border: 1px solid #e74c3c;
+    color: #fff;
+}
+
+.btn-confirm.danger:hover {
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+}
+
+.btn-confirm.cancel {
+    background: transparent;
+    border: 1px solid #666;
+    color: #888;
+}
+
+.btn-confirm.cancel:hover {
+    border-color: #888;
+    color: #fff;
+}
+
+/* ============================================
+   SEGMENT LOCK OVERRIDE (v2.6.0)
+   ============================================ */
+
+/* Locked segment block styling */
+.segment-block.locked {
+    background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%) !important;
+    border-color: #9b59b6 !important;
+    animation: lockedPulse 1.2s ease-in-out infinite;
+}
+
+.segment-block.locked::before {
+    content: '🔒';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 12px;
+    background: #1a1a2e;
+    border-radius: 50%;
+    padding: 2px;
+}
+
+@keyframes lockedPulse {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(155, 89, 182, 0.6);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(155, 89, 182, 0.9);
+    }
+}
+
+/* Segment context menu */
+.segment-context-menu {
+    position: fixed;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    border: 1px solid #4ecca3;
+    border-radius: 8px;
+    padding: 8px 0;
+    min-width: 180px;
+    z-index: 2000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+}
+
+.segment-context-menu.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.context-menu-header {
+    padding: 8px 15px;
+    font-size: 11px;
+    color: #4ecca3;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid #0f3460;
+    margin-bottom: 5px;
+}
+
+.context-menu-item {
+    padding: 10px 15px;
+    font-size: 13px;
+    color: #ccc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.15s;
+}
+
+.context-menu-item:hover {
+    background: rgba(78, 204, 163, 0.2);
+    color: #fff;
+}
+
+.context-menu-item.danger {
+    color: #e74c3c;
+}
+
+.context-menu-item.danger:hover {
+    background: rgba(231, 76, 60, 0.2);
+}
+
+.context-menu-item.lock {
+    color: #9b59b6;
+}
+
+.context-menu-item.lock:hover {
+    background: rgba(155, 89, 182, 0.2);
+}
+
+.context-menu-item.unlock {
+    color: #2ecc71;
+}
+
+.context-menu-item.unlock:hover {
+    background: rgba(46, 204, 113, 0.2);
+}
+
+.context-menu-item .item-icon {
+    font-size: 14px;
+    width: 20px;
+    text-align: center;
+}
+
+.context-menu-divider {
+    height: 1px;
+    background: #0f3460;
+    margin: 5px 0;
+}
+
+/* Lock reason input modal */
+.lock-reason-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+}
+
+.lock-reason-modal.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.lock-reason-dialog {
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    border: 2px solid #9b59b6;
+    border-radius: 10px;
+    padding: 25px;
+    max-width: 400px;
+    width: 90%;
+}
+
+.lock-reason-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #9b59b6;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lock-reason-segment {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 15px;
+}
+
+.lock-reason-input {
+    width: 100%;
+    padding: 12px;
+    background: #0a0a1a;
+    border: 1px solid #0f3460;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.lock-reason-input:focus {
+    outline: none;
+    border-color: #9b59b6;
+}
+
+.lock-reason-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+}
+
+.lock-reason-buttons button {
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lock-reason-buttons .btn-lock {
+    background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+    border: 1px solid #9b59b6;
+    color: #fff;
+}
+
+.lock-reason-buttons .btn-lock:hover {
+    box-shadow: 0 0 15px rgba(155, 89, 182, 0.5);
+}
+
+.lock-reason-buttons .btn-cancel {
+    background: transparent;
+    border: 1px solid #666;
+    color: #888;
+}
+
+.lock-reason-buttons .btn-cancel:hover {
+    border-color: #888;
+    color: #fff;
+}
+
+/* Legend update for locked segments */
+.legend-color.locked {
+    background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+    border-color: #9b59b6;
+}

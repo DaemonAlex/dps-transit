@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DPS Transit</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Schedule Board Display -->
+    <div id="schedule-board" class="schedule-board hidden">
+        <div class="board-header">
+            <div class="station-name" id="station-name">DOWNTOWN LS</div>
+            <div class="current-time" id="current-time">14:35</div>
+        </div>
+
+        <div class="board-content">
+            <div class="arrivals-header">
+                <span class="col-dest">DESTINATION</span>
+                <span class="col-eta">ETA</span>
+                <span class="col-status">STATUS</span>
+            </div>
+
+            <div class="arrivals-list" id="arrivals-list">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+
+        <div class="board-footer">
+            <div class="announcement" id="announcement">
+                Welcome to Los Santos Metropolitan Transit
+            </div>
+        </div>
+    </div>
+
+    <!-- Passenger Announcement Overlay -->
+    <div id="passenger-announcement" class="passenger-announcement hidden">
+        <div class="announcement-content">
+            <div class="announcement-icon" id="announcement-icon">🚂</div>
+            <div class="announcement-title" id="announcement-title">Next Station</div>
+            <div class="announcement-station" id="announcement-station">Union Depot</div>
+            <div class="announcement-subtitle" id="announcement-subtitle">Downtown Los Santos</div>
+        </div>
+    </div>
+
+    <!-- Ticket Display -->
+    <div id="ticket-display" class="ticket-display hidden">
+        <div class="ticket">
+            <div class="ticket-header">
+                <div class="transit-logo">LSMTA</div>
+                <div class="ticket-type" id="ticket-type">SINGLE JOURNEY</div>
+            </div>
+
+            <div class="ticket-body">
+                <div class="route">
+                    <div class="station from">
+                        <span class="label">FROM</span>
+                        <span class="name" id="ticket-from">LSIA</span>
+                    </div>
+                    <div class="route-arrow">→</div>
+                    <div class="station to">
+                        <span class="label">TO</span>
+                        <span class="name" id="ticket-to">ROXWOOD</span>
+                    </div>
+                </div>
+
+                <div class="ticket-details">
+                    <div class="detail">
+                        <span class="label">FARE</span>
+                        <span class="value" id="ticket-fare">$25</span>
+                    </div>
+                    <div class="detail">
+                        <span class="label">VALID UNTIL</span>
+                        <span class="value" id="ticket-expires">15:35</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ticket-footer">
+                <div class="ticket-id" id="ticket-id">TKT-123456</div>
+                <div class="barcode">||||||||||||||||||||</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dispatcher Control Panel -->
+    <div id="dispatcher-panel" class="dispatcher-panel hidden">
+        <div class="dispatcher-header">
+            <div class="dispatcher-title">
+                <span class="dispatch-icon">🚦</span>
+                TRANSIT DISPATCH CONTROL
+            </div>
+            <div class="dispatcher-time" id="dispatcher-time">14:35:00</div>
+        </div>
+
+        <div class="dispatcher-content">
+            <!-- Track 0: Main Line -->
+            <div class="track-section">
+                <div class="track-label">
+                    <span class="track-id">TRACK 0</span>
+                    <span class="track-name">Regional Rail - LSIA to Paleto</span>
+                </div>
+                <div class="track-schematic" id="track-0-schematic">
+                    <div class="segment" data-segment="T0_SEG1">
+                        <div class="segment-block"></div>
+                        <div class="segment-label">LSIA</div>
+                    </div>
+                    <div class="segment-connector"></div>
+                    <div class="segment" data-segment="T0_SEG2">
+                        <div class="segment-block"></div>
+                        <div class="segment-label">S. LS</div>
+                    </div>
+                    <div class="segment-connector"></div>
+                    <div class="segment" data-segment="T0_SEG3">
+                        <div class="segment-block"></div>
+                        <div class="segment-label">DT</div>
+                    </div>
+                    <div class="segment-connector"></div>
+                    <div class="segment" data-segment="T0_SEG4">
+                        <div class="segment-block"></div>
+                        <div class="segment-label">D.P.</div>
+                    </div>
+                    <div class="segment-connector"></div>
+                    <div class="segment" data-segment="T0_SEG5">
+                        <div class="segment-block"></div>
+                        <div class="segment-label">HWY</div>
+                    </div>
+                    <div class="segment-connector"></div>
+                    <div class="segment" data-segment="T0_SEG6">
+                        <div class="segment-block"></div>
+                        <div class="segment-label">JCT</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Track 13: Roxwood Line -->
+            <div class="track-section">
+                <div class="track-label">
+                    <span class="track-id">TRACK 13</span>
+                    <span class="track-name">Roxwood Passenger - Junction to Roxwood</span>
+                </div>
+                <div class="track-schematic" id="track-13-schematic">
+                    <div class="segment" data-segment="T13_SEG1">
+                        <div class="segment-block"></div>
+                        <div class="segment-label">JCT</div>
+                    </div>
+                    <div class="segment-connector"></div>
+                    <div class="segment" data-segment="T13_SEG2">
+                        <div class="segment-block curve-warning"></div>
+                        <div class="segment-label">BRIDGE</div>
+                    </div>
+                    <div class="segment-connector"></div>
+                    <div class="segment" data-segment="T13_SEG3">
+                        <div class="segment-block"></div>
+                        <div class="segment-label">RXW</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Track 12: Freight Line -->
+            <div class="track-section freight-section">
+                <div class="track-label">
+                    <span class="track-id">TRACK 12</span>
+                    <span class="track-name">Freight - Sandy Shores / Grapeseed</span>
+                </div>
+                <div class="track-schematic" id="track-12-schematic">
+                    <div class="segment" data-segment="T12_SEG1">
+                        <div class="segment-block"></div>
+                        <div class="segment-label">SANDY</div>
+                    </div>
+                    <div class="segment-connector"></div>
+                    <div class="segment" data-segment="T12_SEG2">
+                        <div class="segment-block"></div>
+                        <div class="segment-label">GRAPE</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Train List -->
+        <div class="dispatcher-trains">
+            <div class="trains-header">ACTIVE TRAINS</div>
+            <div class="trains-list" id="dispatcher-trains-list">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="dispatcher-legend">
+            <div class="legend-item"><span class="legend-color empty"></span> Clear</div>
+            <div class="legend-item"><span class="legend-color passenger"></span> Passenger</div>
+            <div class="legend-item"><span class="legend-color freight"></span> Freight</div>
+            <div class="legend-item"><span class="legend-color held"></span> Signal Hold</div>
+            <div class="legend-item"><span class="legend-color locked"></span> Locked</div>
+        </div>
+
+        <div class="dispatcher-footer">
+            Press <span class="key-hint">ESC</span> to close | Right-click segment for options
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
