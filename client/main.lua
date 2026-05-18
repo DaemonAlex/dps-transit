@@ -50,16 +50,18 @@ function EnableTracks()
     SwitchTrainTrack(Config.Tracks.mainLine, true)
     SwitchTrainTrack(Config.Tracks.metro, true)
 
-    -- Enable Roxwood tracks
-    SwitchTrainTrack(Config.Tracks.roxwoodFreight, true)
-    SwitchTrainTrack(Config.Tracks.roxwoodPassenger, true)
+    -- Roxwood tracks - gated by Config.RoxwoodEnabled (see config.lua)
+    if Config.RoxwoodEnabled then
+        SwitchTrainTrack(Config.Tracks.roxwoodFreight, true)
+        SwitchTrainTrack(Config.Tracks.roxwoodPassenger, true)
+    end
 
     -- Disable random trains
     SetTrainTrackSpawnFrequency(Config.Tracks.mainLine, 0)
     SetTrainTrackSpawnFrequency(Config.Tracks.metro, 0)
     SetRandomTrains(false)
 
-    Transit.Debug('Tracks enabled')
+    Transit.Debug('Tracks enabled (Roxwood=' .. tostring(Config.RoxwoodEnabled) .. ')')
 end
 
 -- Create station blips

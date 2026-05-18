@@ -95,7 +95,8 @@ end
 -- Get direction name
 function Transit.GetDirectionName(direction)
     if direction then
-        return "Northbound to Roxwood"
+        -- Northbound terminus depends on whether Roxwood is enabled
+        return Config.RoxwoodEnabled and "Northbound to Roxwood" or "Northbound to Paleto"
     else
         return "Southbound to LSIA"
     end
@@ -104,7 +105,7 @@ end
 -- Get final destination based on direction
 function Transit.GetFinalDestination(direction)
     if direction then
-        return 'roxwood'
+        return Config.RoxwoodEnabled and 'roxwood' or 'paleto_junction'
     else
         return 'lsia'
     end

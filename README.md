@@ -4,6 +4,61 @@ A comprehensive multi-modal public transportation system for FiveM featuring aut
 
 ---
 
+## Roxwood Map Integration (Toggle)
+
+This script ships with full support for the **Roxwood map expansion** (Track 13, Route A shuttle, Roxwood Central station, bridge curvature handling). The integration is **DISABLED by default** — the script runs cleanly without Roxwood and shows only the Regional / Metro lines.
+
+### Enable Roxwood
+
+When the Roxwood map is installed on your server:
+
+1. **Install Roxwood map resources** under `resources/[roxwood]/` (the MLO + asset packs).
+2. **Uncomment** the `ensure [roxwood]` line in `server.cfg` (it's grouped with a `# Roxwood toggle` comment block).
+3. **Flip the master switch** in `config/config.lua`:
+   ```lua
+   Config.RoxwoodEnabled = true
+   ```
+4. **Restart the server** — track switches and route registration happen at startup.
+
+### Disable Roxwood
+
+Reverse the above:
+
+1. Set `Config.RoxwoodEnabled = false` in `config/config.lua`.
+2. Re-comment the `ensure [roxwood]` line in `server.cfg`.
+3. Restart.
+
+### What the toggle controls
+
+| When `RoxwoodEnabled = false` | When `RoxwoodEnabled = true` |
+|---|---|
+| Track 13 (Roxwood passenger) and Track 12 freight not switched on client | Both tracks switched on at session start |
+| `['roxwood']` train route inactive (no trains spawn) | Roxwood Rail runs the 70/30 schedule from `roxwood` block in `trains.lua` |
+| Shuttle Route A (Paleto↔Roxwood) disabled | Route A active, runs Paleto Bay ↔ Roxwood South |
+| Direction display says "Northbound to Paleto" | Direction display says "Northbound to Roxwood" |
+| Final destination on northbound trains: `paleto_junction` | Final destination: `roxwood` (Roxwood Central Station) |
+| Server-side `TrackOccupancy[13]` not allocated | `TrackOccupancy[13]` initialized |
+
+### What it does NOT control
+
+- The `['roxwood']` station data and Track 13 segment definitions remain in the config files as inert data. They're only consulted by the gated route / track-occupancy code, so they're safe to leave in place.
+- UI strings in `locales/en.json` and the Track 13 schematic in `html/index.html` are still present — they simply won't have live data behind them when the toggle is off.
+- The README, SPEC.md, ARCHITECTURE.md, and STATIONS.md docs describe the full system including Roxwood.
+
+### Toggle locations at a glance
+
+| File | Symbol |
+|---|---|
+| `config/config.lua` | `Config.RoxwoodEnabled` (master switch) |
+| `config/trains.lua` | `['roxwood'].enabled = Config.RoxwoodEnabled` |
+| `config/shuttles.lua` | `['A'].enabled = Config.RoxwoodEnabled` |
+| `client/main.lua` | `EnableTracks()` — gates `SwitchTrainTrack` for `roxwoodFreight`/`roxwoodPassenger` |
+| `server/scheduler.lua` | `TrackOccupancy[13]` initialized conditionally |
+| `shared/functions.lua` | `GetDirectionName` / `GetFinalDestination` switch on the flag |
+| `server.cfg` | `#ensure [roxwood]` line (comment to disable, uncomment to enable) |
+
+---
+
 ## Features
 
 ### Core Transit System

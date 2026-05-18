@@ -75,7 +75,7 @@ Config.Lines = {
         name = 'Roxwood Rail',
         shortName = 'ROX',
         track = 13,
-        enabled = false,  -- Disabled until coords are set
+        enabled = Config.RoxwoodEnabled,  -- master toggle: config/config.lua -> Config.RoxwoodEnabled
         color = 2,  -- Green blip
 
         schedule = {

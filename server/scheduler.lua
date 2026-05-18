@@ -25,9 +25,11 @@ local EmergencyHold = {
 -- Track occupancy (for freight conflict prevention)
 local TrackOccupancy = {
     [0] = {},   -- Regional line
-    [3] = {},   -- Metro line
-    [13] = {}   -- Roxwood line
+    [3] = {}    -- Metro line
 }
+if Config.RoxwoodEnabled then
+    TrackOccupancy[13] = {}  -- Roxwood line (toggle in config/config.lua)
+end
 
 -----------------------------------------------------------
 -- VIRTUAL BLOCK SIGNALING SYSTEM
@@ -86,6 +88,9 @@ local SIGNAL_RED = 'red'
 
 -- Manual segment overrides: { segmentId = { state, reason, setBy, setAt } }
 local SegmentOverrides = {}
+
+-- Dispatcher-initiated holds (referenced from heartbeat at line ~144; populated by handlers below)
+local DispatcherHolds = {}
 
 -- Override state constants
 local OVERRIDE_LOCKED = 'locked'   -- Force RED, no trains may enter
@@ -1884,9 +1889,6 @@ exports('HasDispatcherAccess', HasDispatcherAccess)
 -- DISPATCHER EMERGENCY ACTIONS
 -- Manual override controls from dispatcher panel
 -----------------------------------------------------------
-
--- Track dispatcher-initiated holds (separate from automatic signal holds)
-local DispatcherHolds = {}
 
 -- Handle emergency stop/release from dispatcher panel
 RegisterNetEvent('dps-transit:server:dispatcherEmergencyAction', function(trainId, action)

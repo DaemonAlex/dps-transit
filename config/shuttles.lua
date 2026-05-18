@@ -42,7 +42,7 @@ Config.ShuttleRoutes = {
     ['A'] = {
         name = 'Paleto - Roxwood Express',
         shortName = 'Route A',
-        enabled = false,  -- Enable when Roxwood coords are set
+        enabled = Config.RoxwoodEnabled,  -- master toggle: config/config.lua -> Config.RoxwoodEnabled
         priority = 1,     -- High priority route
 
         -- Route endpoints

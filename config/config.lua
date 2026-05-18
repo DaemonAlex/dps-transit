@@ -9,8 +9,27 @@ Config = {}
 -- Auto-detection checks for qb-core first, then es_extended
 Config.Framework = 'auto'
 
+-- ======================================================================
+-- ROXWOOD MAP TOGGLE
+-- ======================================================================
+-- Set to true ONLY when the Roxwood map is installed on the server.
+-- When false (default), the script skips:
+--   * Track 13 (Roxwood passenger) and its segments
+--   * The ['roxwood'] train route, ['roxwood_passenger'] consist,
+--     ['freight_short'] freight consist, and the roxwood schedule
+--   * Shuttle Route A (Paleto <-> Roxwood)
+--   * The 'roxwood' station entry, Zone C, and StationOrder/ZoneStations refs
+--   * "Northbound to Roxwood" direction text (falls back to Paleto)
+--
+-- When you re-enable, also do these two things:
+--   1. Install/restore Roxwood-map resources under resources\[roxwood]\
+--      and uncomment "ensure [roxwood]" in server.cfg.
+--   2. Restart the server (route + track switches need a fresh start).
+-- ======================================================================
+Config.RoxwoodEnabled = false
+
 -- Debug mode
-Config.Debug = false
+Config.Debug = true
 
 -- Train Settings
 Config.Train = {
@@ -339,7 +358,7 @@ Config.TrackSpeeds = {
 -- Schedule Configuration
 Config.Schedule = {
     enabled = true,
-    useGameTime = true,     -- Use in-game time for schedules
+    useGameTime = false,    -- false: server uses os.date(); true requires a client→server sync (GetClockHours is client-only)
 
     -- Peak hours (more frequent trains)
     peak = {
