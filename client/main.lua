@@ -50,24 +50,18 @@ function EnableTracks()
     SwitchTrainTrack(Config.Tracks.mainLine, true)
     SwitchTrainTrack(Config.Tracks.metro, true)
 
-    -- Roxwood tracks - gated by Config.RoxwoodEnabled (see config.lua)
-    if Config.RoxwoodEnabled then
-        SwitchTrainTrack(Config.Tracks.roxwoodFreight, true)
-        SwitchTrainTrack(Config.Tracks.roxwoodPassenger, true)
-    end
-
     -- Disable random trains
     SetTrainTrackSpawnFrequency(Config.Tracks.mainLine, 0)
     SetTrainTrackSpawnFrequency(Config.Tracks.metro, 0)
     SetRandomTrains(false)
 
-    Transit.Debug('Tracks enabled (Roxwood=' .. tostring(Config.RoxwoodEnabled) .. ')')
+    Transit.Debug('Tracks enabled')
 end
 
 -- Create station blips
 function CreateStationBlips()
     for stationId, station in pairs(Config.Stations) do
-        -- Skip if coordinates not set (like Roxwood TBD)
+        -- Skip if coordinates not set (placeholder stations)
         if station.platform.x == 0 and station.platform.y == 0 then
             goto continue
         end
@@ -154,8 +148,13 @@ RegisterNetEvent('dps-transit:client:spawnTrain', function(trainId, trainData)
         data = trainData,
         trainType = trainData.trainType,
         lineId = trainData.lineId,
-        canBoard = trainData.canBoard
+        canBoard = trainData.canBoard,
+        isOwner = false  -- Set true only if the server assigns us as authoritative owner
     }
+
+    -- Single-owner model: ack the spawn. The FIRST client to ack becomes the
+    -- authoritative owner and is the only one allowed to push occupancy updates.
+    TriggerServerEvent('dps-transit:server:trainSpawnAck', trainId)
 
     -- Create blip with line color
     if Config.Features.mapBlips then
@@ -166,6 +165,19 @@ RegisterNetEvent('dps-transit:client:spawnTrain', function(trainId, trainData)
     -- Log spawn type
     local typeLabel = trainData.trainType:upper()
     Transit.Debug('[' .. typeLabel .. '] Spawned:', trainId, 'on', trainData.lineId, 'entity:', train)
+end)
+
+-- Cache our own server id once for ownership comparisons.
+local MyServerId = nil
+
+-- Server tells every client who owns each train. Only the owner pushes occupancy.
+RegisterNetEvent('dps-transit:client:trainOwnerAssigned', function(trainId, ownerSrc)
+    MyServerId = MyServerId or GetPlayerServerId(PlayerId())
+    local train = LocalTrains[trainId]
+    if train then
+        train.isOwner = (ownerSrc == MyServerId)
+        Transit.Debug('OWNER: Train', trainId, train.isOwner and 'owned by us' or 'owned by another client')
+    end
 end)
 
 -- Create blip for train with type info
@@ -493,14 +505,20 @@ CreateThread(function()
                     status = train.data.status
                 }, true)
 
-                -- Fallback trigger for server sync
-                TriggerServerEvent('dps-transit:server:updateTrainPosition', trainId, pos, progress)
-
                 -- Check if near station
                 local nearStation, dist = Transit.GetNearestStation(pos)
-                if dist < 30.0 and train.data.status == 'running' then
-                    if nearStation ~= train.data.currentStation then
-                        TriggerServerEvent('dps-transit:server:trainAtStation', trainId, nearStation)
+
+                -- Single-owner model: only the authoritative owner pushes
+                -- occupancy/station reports. Non-owners still render + move their
+                -- local train, but stay silent to keep block signaling coherent
+                -- and kill the O(players x trains) event spam.
+                if train.isOwner then
+                    TriggerServerEvent('dps-transit:server:updateTrainPosition', trainId, pos, progress)
+
+                    if dist < 30.0 and train.data.status == 'running' then
+                        if nearStation ~= train.data.currentStation then
+                            TriggerServerEvent('dps-transit:server:trainAtStation', trainId, nearStation)
+                        end
                     end
                 end
 
@@ -910,11 +928,15 @@ CreateThread(function()
                     TrainBlips[trainId] = nil
                 end
 
+                local wasOwner = train.isOwner
                 LocalTrains[trainId] = nil
                 cleaned = cleaned + 1
 
-                -- Notify server
-                TriggerServerEvent('dps-transit:server:trainCleaned', trainId, reason)
+                -- Notify server only if we own the train; the server rejects
+                -- non-owner cleanup anyway, this just avoids the wasted event.
+                if wasOwner then
+                    TriggerServerEvent('dps-transit:server:trainCleaned', trainId, reason)
+                end
             end
         end
 
@@ -1292,7 +1314,7 @@ function IsPlayerAtStation()
 end
 
 -----------------------------------------------------------
--- DYNAMIC CURVATURE HANDLING (Roxwood Bridge)
+-- DYNAMIC CURVATURE HANDLING (curved track sections)
 -----------------------------------------------------------
 
 -- Track train headings for curve detection

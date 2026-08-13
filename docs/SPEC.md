@@ -1,7 +1,7 @@
 # DPS-Transit Unified Transportation System
 
 **Project**: dps-transit
-**Version**: 1.0.0
+**Version**: 2.8.0
 **Date**: 2025-12-30
 **Author**: @daemonAlex
 
@@ -9,15 +9,15 @@
 
 ## Overview
 
-A unified public transportation system connecting Los Santos International Airport to Roxwood County via scheduled passenger trains with real-time tracking and arrival predictions.
+A unified public transportation system connecting Los Santos International Airport to Paleto Junction (Blaine County) via scheduled passenger trains with real-time tracking and arrival predictions.
 
 ---
 
 ## Core Features
 
 ### 1. Unified Rail Network
-- Single integrated passenger service spanning the entire map
-- Airport → Downtown LS → Sandy Shores → Roxwood route
+- Single integrated passenger service spanning the main island
+- Airport → Downtown LS → Del Perro → Paleto Junction route
 - Real trains running on actual GTA V rail tracks
 
 ### 2. Automatic Scheduling
@@ -40,17 +40,10 @@ A unified public transportation system connecting Los Santos International Airpo
 ## Rail Network Map
 
 ```
-                                    ROXWOOD COUNTY
+                    ─────────────────────┬───────────────────── Track 12 (Freight Only)
                                          │
                             ┌────────────┴────────────┐
-                            │     ROXWOOD STATION     │ ◄─── Track 13 (Passenger)
-                            │      (End of Line)      │
-                            └────────────┬────────────┘
-                                         │
-                    ─────────────────────┼───────────────────── Track 12 (Freight Only)
-                                         │
-                            ┌────────────┴────────────┐
-                            │   GRAPESEED JUNCTION    │
+                            │   GRAPESEED DEPOT       │
                             └────────────┬────────────┘
                                          │
                             ┌────────────┴────────────┐
@@ -60,7 +53,7 @@ A unified public transportation system connecting Los Santos International Airpo
                     ═════════════════════╪═════════════════════ Track 0 (Main Loop)
                                          │
                             ┌────────────┴────────────┐
-                            │   PALETO BAY STATION    │
+                            │   PALETO JUNCTION       │ ◄─── Northern Terminus
                             └────────────┬────────────┘
                                          │
                             ┌────────────┴────────────┐
@@ -96,15 +89,9 @@ A unified public transportation system connecting Los Santos International Airpo
 
 | Station | Location | Platform | Zone |
 |---------|----------|----------|------|
-| Paleto Bay | vec3(-360.0, 6130.0, 31.5) | Ground level | B |
+| Paleto Junction | vec3(650.0, 5650.0, 35.0) | Ground level | B |
 | Sandy Shores | vec3(1770.0, 3780.0, 34.0) | Ground level | B |
-| Grapeseed Junction | vec3(2450.0, 4100.0, 38.0) | Ground level | B |
-
-### Zone C: Roxwood County
-
-| Station | Location | Platform | Zone |
-|---------|----------|----------|------|
-| Roxwood Central | vec3(TBD) | Ground level | C |
+| Grapeseed Depot | vec3(2450.0, 4100.0, 38.0) | Ground level | B |
 
 ---
 
@@ -122,8 +109,7 @@ Config.Fares = {
 
 Config.Zones = {
     A = { 'lsia', 'downtown', 'del_perro' },
-    B = { 'paleto', 'sandy', 'grapeseed' },
-    C = { 'roxwood' }
+    B = { 'paleto_junction', 'sandy', 'grapeseed' }
 }
 ```
 
@@ -192,7 +178,7 @@ function GenerateSchedule()
         local minute = startMinute + ((i - 1) * interval)
         table.insert(schedule, {
             departure = minute,
-            route = 'lsia_to_roxwood',
+            route = 'lsia_to_paleto',
             trainConfig = 'passenger_config01'
         })
     end
@@ -213,7 +199,7 @@ ActiveTrains = {}
 ActiveTrains[trainId] = {
     id = trainId,
     entity = trainEntity,
-    route = 'lsia_to_roxwood',
+    route = 'lsia_to_paleto',
     direction = 'northbound',  -- or 'southbound'
     currentPosition = vec3(x, y, z),
     currentTrackProgress = 0.45,  -- 45% along track
@@ -313,9 +299,9 @@ Config.SpawnPoints = {
         track = 0,
         direction = true
     },
-    roxwood_southbound = {
-        coords = vec4(TBD),
-        track = 13,
+    paleto_southbound = {
+        coords = vec4(650.0, 5650.0, 35.0, 135.0),
+        track = 0,
         direction = false
     }
 }
@@ -520,7 +506,7 @@ end
     </div>
 
     <div class="announcements" id="announcements">
-        <!-- "The next train to Roxwood arrives in 5 minutes" -->
+        <!-- "The next train to Paleto arrives in 5 minutes" -->
     </div>
 </div>
 ```
@@ -566,8 +552,7 @@ Config.BoardingTime = 25  -- seconds doors stay open
 Config.Tracks = {
     mainLine = 0,
     metro = 3,
-    roxwoodFreight = 12,
-    roxwoodPassenger = 13
+    freight = 12
 }
 
 -- Schedule
@@ -594,10 +579,6 @@ Config.Fares = {
 ### With BigDaddy Trains
 - Use BigDaddy's train models and sounds
 - Leverage existing vehicle configs
-
-### With Roxwood Trains
-- Connect to Track 12/13 in Roxwood County
-- Use Roxwood passenger consist (`amb_statrac_config_1`)
 
 ### With NTeam Scenario
 - Use for special events (jail transport via train)
@@ -660,7 +641,6 @@ dps-transit/
 | ox_lib | UI, callbacks, zones |
 | ox_target | Station interactions |
 | BigDaddy Trains | Train models, sounds |
-| amb-roxwood-trains | Roxwood track data |
 
 ---
 

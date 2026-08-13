@@ -1,68 +1,13 @@
-# DPS-Transit v2.7.0
+# DPS-Transit v2.8.0
 
 A comprehensive multi-modal public transportation system for FiveM featuring automated train scheduling, virtual block signaling for collision prevention, dispatcher control panels, and real-time passenger tracking.
-
----
-
-## Roxwood Map Integration (Toggle)
-
-This script ships with full support for the **Roxwood map expansion** (Track 13, Route A shuttle, Roxwood Central station, bridge curvature handling). The integration is **DISABLED by default** — the script runs cleanly without Roxwood and shows only the Regional / Metro lines.
-
-### Enable Roxwood
-
-When the Roxwood map is installed on your server:
-
-1. **Install Roxwood map resources** under `resources/[roxwood]/` (the MLO + asset packs).
-2. **Uncomment** the `ensure [roxwood]` line in `server.cfg` (it's grouped with a `# Roxwood toggle` comment block).
-3. **Flip the master switch** in `config/config.lua`:
-   ```lua
-   Config.RoxwoodEnabled = true
-   ```
-4. **Restart the server** — track switches and route registration happen at startup.
-
-### Disable Roxwood
-
-Reverse the above:
-
-1. Set `Config.RoxwoodEnabled = false` in `config/config.lua`.
-2. Re-comment the `ensure [roxwood]` line in `server.cfg`.
-3. Restart.
-
-### What the toggle controls
-
-| When `RoxwoodEnabled = false` | When `RoxwoodEnabled = true` |
-|---|---|
-| Track 13 (Roxwood passenger) and Track 12 freight not switched on client | Both tracks switched on at session start |
-| `['roxwood']` train route inactive (no trains spawn) | Roxwood Rail runs the 70/30 schedule from `roxwood` block in `trains.lua` |
-| Shuttle Route A (Paleto↔Roxwood) disabled | Route A active, runs Paleto Bay ↔ Roxwood South |
-| Direction display says "Northbound to Paleto" | Direction display says "Northbound to Roxwood" |
-| Final destination on northbound trains: `paleto_junction` | Final destination: `roxwood` (Roxwood Central Station) |
-| Server-side `TrackOccupancy[13]` not allocated | `TrackOccupancy[13]` initialized |
-
-### What it does NOT control
-
-- The `['roxwood']` station data and Track 13 segment definitions remain in the config files as inert data. They're only consulted by the gated route / track-occupancy code, so they're safe to leave in place.
-- UI strings in `locales/en.json` and the Track 13 schematic in `html/index.html` are still present — they simply won't have live data behind them when the toggle is off.
-- The README, SPEC.md, ARCHITECTURE.md, and STATIONS.md docs describe the full system including Roxwood.
-
-### Toggle locations at a glance
-
-| File | Symbol |
-|---|---|
-| `config/config.lua` | `Config.RoxwoodEnabled` (master switch) |
-| `config/trains.lua` | `['roxwood'].enabled = Config.RoxwoodEnabled` |
-| `config/shuttles.lua` | `['A'].enabled = Config.RoxwoodEnabled` |
-| `client/main.lua` | `EnableTracks()` — gates `SwitchTrainTrack` for `roxwoodFreight`/`roxwoodPassenger` |
-| `server/scheduler.lua` | `TrackOccupancy[13]` initialized conditionally |
-| `shared/functions.lua` | `GetDirectionName` / `GetFinalDestination` switch on the flag |
-| `server.cfg` | `#ensure [roxwood]` line (comment to disable, uncomment to enable) |
 
 ---
 
 ## Features
 
 ### Core Transit System
-- **Multi-Line Rail Network** - Regional Rail, LS Metro, and Roxwood Lines
+- **Multi-Line Rail Network** - Regional Rail and LS Metro lines
 - **70/30 Mixed Traffic** - Configurable passenger/freight train scheduling
 - **Zone-Based Fares** - Distance-based pricing with ticket validation
 - **Real-Time Tracking** - Live train positions with ETA calculations
@@ -70,7 +15,7 @@ Reverse the above:
 - **NUI Schedule Board** - Visual arrival display at stations
 
 ### Block Signaling System (v2.4.0+)
-- **Virtual Block Segments** - 11 track segments preventing train collisions
+- **Virtual Block Segments** - 8 track segments preventing train collisions
 - **Three-State Signals** - GREEN/YELLOW/RED with automatic speed control
 - **Deadlock Detection** - 60-second timeout with automatic resolution
 - **Carriage Clearance** - 6-second delay for long consists to clear segments
@@ -89,10 +34,10 @@ Reverse the above:
 - **Dynamic Speed Control** - Automatic curve/bridge speed reduction
 
 ### Framework Bridge (v2.7.0+)
-- **Multi-Framework Support** - Works with both QBCore and ESX
-- **Auto-Detection** - Automatically detects your framework on startup
+- **Multi-Framework Support** - Works with Qbox (qbx_core), QBCore, and ESX
+- **Auto-Detection** - Automatically detects your framework on startup (qbx_core preferred)
 - **Clean Abstraction** - All framework-specific code isolated in bridge files
-- **Easy Configuration** - Set `Config.Framework = 'qb'`, `'esx'`, or `'auto'`
+- **Easy Configuration** - Set `Config.Framework = 'qbx'`, `'qb'`, `'esx'`, or `'auto'`
 
 ---
 
@@ -103,23 +48,12 @@ Reverse the above:
 │                              TRANSIT NETWORK MAP                            │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│                                 ROXWOOD COUNTY                              │
-│                                      │                                      │
-│                         ┌────────────┴────────────┐                         │
-│                         │    ROXWOOD CENTRAL      │  Zone C                 │
-│                         │     (End of Line)       │  Track 13               │
-│                         └────────────┬────────────┘                         │
-│                                      │                                      │
-│                                    ╱╱  Bridge curves NNE                    │
-│                                  ╱╱    into Roxwood County                  │
-│                                ╱╱                                           │
-│  ════════════════════════════╱╱═══════════════════════════════════════════  │
 │                        BLAINE COUNTY                                        │
 │  ═══════════════════════════╪═════════════════════════════════════════════  │
 │                             │                                               │
 │            ┌────────────────┴────────────────┐                              │
 │            │       PALETO JUNCTION           │  Zone B                      │
-│            │   (Track 0 / Track 13 Split)    │  Transfer Point              │
+│            │     (Northern Terminus)         │                              │
 │            └────────────────┬────────────────┘                              │
 │                             │                                               │
 │                             │  Track 0 (Main Line)                          │
@@ -171,12 +105,6 @@ The virtual block signaling system divides tracks into protected segments, preve
 │  │ SEG1 │ SEG2 │ SEG3 │ SEG4 │ SEG5 │ SEG6 │                                │
 │  │ LSIA │ S.LS │  DT  │ D.P. │ HWY  │ JCT  │                                │
 │  └──────┴──────┴──────┴──────┴──────┴──────┘                                │
-│                                                                             │
-│  TRACK 13 (Roxwood Line) - 3 Segments                                       │
-│  ┌──────┬────────┬──────┐                                                   │
-│  │ SEG1 │  SEG2  │ SEG3 │                                                   │
-│  │ JCT  │ BRIDGE │ RXW  │  ← Bridge has 12 m/s speed limit                  │
-│  └──────┴────────┴──────┘                                                   │
 │                                                                             │
 │  TRACK 12 (Freight) - 2 Segments                                            │
 │  ┌───────┬───────┐                                                          │
@@ -239,20 +167,19 @@ Lock Priority Order:
 │                              ZONE-BASED FARES                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│     ZONE A                    ZONE B                    ZONE C              │
-│  ┌───────────┐             ┌───────────┐             ┌───────────┐         │
-│  │   LSIA    │             │  Paleto   │             │  Roxwood  │         │
-│  │ Downtown  │             │   Sandy*  │             │           │         │
-│  │ Del Perro │             │ Grapeseed*│             │           │         │
-│  │   Davis   │             │           │             │           │         │
-│  └───────────┘             └───────────┘             └───────────┘         │
+│     ZONE A                    ZONE B                                        │
+│  ┌───────────┐             ┌───────────┐                                    │
+│  │   LSIA    │             │  Paleto   │                                    │
+│  │ Downtown  │             │   Sandy*  │                                    │
+│  │ Del Perro │             │ Grapeseed*│                                    │
+│  │   Davis   │             │           │                                    │
+│  └───────────┘             └───────────┘                                    │
 │                            * Freight only                                   │
 │                                                                             │
 │     FARE STRUCTURE:                                                         │
 │     ┌─────────────────────────────────────────────────────────────────┐    │
-│     │  Same Zone (A→A, B→B, C→C)          │    $5                     │    │
-│     │  One Zone  (A→B, B→C)               │   $15                     │    │
-│     │  Two Zones (A→C)                    │   $25                     │    │
+│     │  Same Zone (A→A, B→B)               │    $5                     │    │
+│     │  One Zone  (A→B)                    │   $15                     │    │
 │     │  Day Pass  (Unlimited 24hr)         │   $50                     │    │
 │     └─────────────────────────────────────────────────────────────────┘    │
 │                                                                             │
@@ -292,7 +219,7 @@ Lock Priority Order:
    ```
    ensure ox_lib
    ensure ox_target
-   ensure qb-core  # OR ensure es_extended
+   ensure qbx_core  # OR ensure qb-core / ensure es_extended
    ensure dps-transit
    ```
 3. **Configure** framework in `config/config.lua` (optional - auto-detects by default):
@@ -342,8 +269,7 @@ Config.Schedule = {
 Config.TrackSpeeds = {
     [0] = 25.0,   -- Regional Rail
     [3] = 20.0,   -- LS Metro (urban)
-    [12] = 15.0,  -- Freight
-    [13] = 18.0,  -- Roxwood Line
+    [12] = 15.0,  -- Sandy/Grapeseed Freight
 }
 ```
 
@@ -462,8 +388,8 @@ dps-transit/
 
 ## Compatibility
 
-- **Roxwood County** - Supports Track 12/13 from amb-roxwood-trains
-- **QBCore** - Native framework integration
+- **Qbox (qbx_core)** - Native framework integration (preferred; uses discrete `qbx_core` exports, no `GetCoreObject`)
+- **QBCore / ESX** - Supported via the framework bridge
 - **ox_inventory / qs-inventory** - Auto-detected for ticket items
 
 ---
@@ -472,6 +398,7 @@ dps-transit/
 
 | Version | Features |
 |---------|----------|
+| v2.8.0 | Qbox (qbx_core) bridge + fix pass: single-owner train model, net-event validation, Roxwood removed |
 | v2.7.0 | Framework bridge (QBCore + ESX support) |
 | v2.6.0 | Manual segment overrides (lock/unlock) |
 | v2.5.3 | Dispatcher hold visual differentiation |

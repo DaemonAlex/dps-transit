@@ -32,8 +32,7 @@
     },
     "zones": {
         "A": "Los Santos Metropolitan",
-        "B": "Blaine County",
-        "C": "Roxwood County"
+        "B": "Blaine County"
     },
     "stations": {
         "lsia": "Los Santos International Airport",
@@ -51,11 +50,8 @@
         "del_perro_short": "Del Perro",
         "paleto_junction": "Paleto Junction",
         "paleto_junction_short": "Junction",
-        "paleto_junction_arrival": "Now arriving at Paleto Junction - Change here for Roxwood services",
-        "paleto_junction_transfer": "Transfer here for Track 13 to Roxwood Central",
-        "roxwood": "Roxwood Central Station",
-        "roxwood_short": "Roxwood",
-        "roxwood_terminus": "This train terminates here. All passengers must exit.",
+        "paleto_junction_arrival": "Now arriving at Paleto Junction - Northern terminus",
+        "paleto_junction_terminus": "This train terminates here. All passengers must exit.",
         "sandy": "Sandy Shores Freight Yard",
         "sandy_short": "Sandy (Freight)",
         "grapeseed": "Grapeseed Depot",
@@ -161,9 +157,6 @@
         "T0_SEG4": "Del Perro District",
         "T0_SEG5": "Great Ocean Highway",
         "T0_SEG6": "Paleto Approach",
-        "T13_SEG1": "Junction Departure",
-        "T13_SEG2": "Roxwood Bridge",
-        "T13_SEG3": "Roxwood Terminal",
         "T12_SEG1": "Sandy Shores Freight",
         "T12_SEG2": "Grapeseed Depot"
     }

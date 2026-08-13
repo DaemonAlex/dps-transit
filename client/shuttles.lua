@@ -482,6 +482,18 @@ function ShowShuttleSchedule(routeId)
     local nextTime = GetNextShuttleTime(routeId)
     local frequency = route.schedule.frequency
 
+    -- Build the stop list manually. (Previously used vim.tbl_map, a Neovim API
+    -- that does not exist in CfxLua and threw when a player opened the schedule.)
+    local stopLines = {}
+    if route.stops then
+        for _, s in ipairs(route.stops) do
+            stopLines[#stopLines + 1] = '- ' .. s.name
+        end
+    end
+    if #stopLines == 0 then
+        stopLines[1] = 'Loading...'
+    end
+
     lib.alertDialog({
         header = route.name .. ' Schedule',
         content = [[
@@ -492,7 +504,7 @@ function ShowShuttleSchedule(routeId)
 **Next Shuttle:** :]] .. (nextTime and string.format('%02d', nextTime) or 'N/A') .. [[
 
 **Stops:**
-]] .. table.concat(vim.tbl_map(function(s) return '- ' .. s.name end, route.stops) or {'Loading...'}, '\n'),
+]] .. table.concat(stopLines, '\n'),
         centered = true
     })
 end

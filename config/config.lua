@@ -9,27 +9,8 @@ Config = {}
 -- Auto-detection checks for qb-core first, then es_extended
 Config.Framework = 'auto'
 
--- ======================================================================
--- ROXWOOD MAP TOGGLE
--- ======================================================================
--- Set to true ONLY when the Roxwood map is installed on the server.
--- When false (default), the script skips:
---   * Track 13 (Roxwood passenger) and its segments
---   * The ['roxwood'] train route, ['roxwood_passenger'] consist,
---     ['freight_short'] freight consist, and the roxwood schedule
---   * Shuttle Route A (Paleto <-> Roxwood)
---   * The 'roxwood' station entry, Zone C, and StationOrder/ZoneStations refs
---   * "Northbound to Roxwood" direction text (falls back to Paleto)
---
--- When you re-enable, also do these two things:
---   1. Install/restore Roxwood-map resources under resources\[roxwood]\
---      and uncomment "ensure [roxwood]" in server.cfg.
---   2. Restart the server (route + track switches need a fresh start).
--- ======================================================================
-Config.RoxwoodEnabled = false
-
--- Debug mode
-Config.Debug = true
+-- Debug mode (default false for production; set true for verbose console logging)
+Config.Debug = false
 
 -- Train Settings
 Config.Train = {
@@ -58,7 +39,7 @@ Config.Train = {
         cleanupInterval = 60         -- Check every 60 seconds
     },
 
-    -- Dynamic pathing for curved tracks (Roxwood bridge)
+    -- Dynamic pathing for curved track sections
     curvatureHandling = {
         enabled = true,
         curveSpeedMultiplier = 0.7,  -- Slow to 70% on curves
@@ -107,8 +88,7 @@ Config.EmergencyServices = {
 Config.Tracks = {
     mainLine = 0,           -- Main loop track
     metro = 3,              -- LS Metro track
-    roxwoodFreight = 12,    -- Roxwood freight line
-    roxwoodPassenger = 13,  -- Roxwood passenger line
+    freight = 12,           -- Sandy Shores / Grapeseed freight siding
 }
 
 --[[
@@ -240,46 +220,6 @@ Config.BlockSignaling = {
         },
 
         --[[
-            TRACK 13: Paleto Junction → Roxwood (Passenger Line)
-            Total distance: ~5km
-            Segments: 3 blocks
-        ]]
-
-        -- Segment 1: Junction Departure
-        {
-            id = 'T13_SEG1',
-            track = 13,
-            startCoords = vec3(650.0, 5650.0, 35.0),      -- Junction platform
-            endCoords = vec3(2400.0, 5900.0, 30.0),       -- Bridge approach
-            length = 1800,
-            name = 'Junction Departure',
-            stations = {}
-        },
-
-        -- Segment 2: Roxwood Bridge (CRITICAL - curved section)
-        {
-            id = 'T13_SEG2',
-            track = 13,
-            startCoords = vec3(2400.0, 5900.0, 30.0),     -- Bridge start
-            endCoords = vec3(2800.0, 6400.0, 45.0),       -- Bridge end
-            length = 800,
-            name = 'Roxwood Bridge',
-            stations = {},
-            isCritical = true  -- Extra caution on curves
-        },
-
-        -- Segment 3: Roxwood Terminal
-        {
-            id = 'T13_SEG3',
-            track = 13,
-            startCoords = vec3(2800.0, 6400.0, 45.0),
-            endCoords = vec3(3200.0, 6800.0, 50.0),       -- Roxwood station (TBD)
-            length = 600,
-            name = 'Roxwood Terminal',
-            stations = { 'roxwood' }
-        },
-
-        --[[
             TRACK 12: Freight Line (Sandy/Grapeseed)
             Lower priority - freight trains only
         ]]
@@ -313,12 +253,11 @@ Config.BlockSignaling = {
     junctions = {
         ['paleto_junction'] = {
             coords = vec3(650.0, 5650.0, 35.0),
-            connectingTracks = { 0, 13, 12 },
+            connectingTracks = { 0, 12 },  -- Main line + freight siding
             blockRadius = 300.0,
             -- Safe stopping positions per track (before switch)
             safeStopZone = {
                 [0] = vec3(600.0, 5400.0, 35.0),
-                [13] = vec3(700.0, 5700.0, 36.0),
                 [12] = vec3(700.0, 5600.0, 35.0)
             }
         }
@@ -335,21 +274,7 @@ Config.TrackSpeeds = {
         default = 20.0,     -- Urban areas, slower
         zones = {}
     },
-    [13] = {                -- Roxwood Passenger (Track 13)
-        default = 18.0,     -- Slower default for bridge curvature
-        zones = {
-            -- Bridge approach zone (NNE curve into Roxwood)
-            {
-                name = 'roxwood_bridge',
-                start = vec3(2400.0, 5900.0, 30.0),  -- Approx start of bridge
-                finish = vec3(2800.0, 6400.0, 45.0), -- Approx end of bridge
-                radius = 300.0,                       -- Detection radius
-                maxSpeed = 12.0,                      -- Max 12 m/s on bridge (~27 mph)
-                reason = 'Bridge curvature - reduced speed for safety'
-            }
-        }
-    },
-    [12] = {                -- Roxwood Freight (Track 12)
+    [12] = {                -- Sandy/Grapeseed Freight (Track 12)
         default = 15.0,     -- Freight moves slower
         zones = {}
     }
@@ -401,13 +326,11 @@ Config.Fares = {
 Config.Zones = {
     ['A'] = { name = 'Los Santos Metropolitan', color = 0 },    -- White
     ['B'] = { name = 'Blaine County', color = 2 },              -- Green
-    ['C'] = { name = 'Roxwood County', color = 1 },             -- Red
 }
 
 Config.ZoneIndex = {
     ['A'] = 1,
     ['B'] = 2,
-    ['C'] = 3
 }
 
 -- Blip Settings
@@ -496,7 +419,7 @@ Config.MLOSafety = {
     -- Custom portal handling for specific stations
     -- Add entries here if a station uses a custom MLO interior
     portals = {
-        -- ['roxwood'] = {
+        -- ['station_id'] = {
         --     interiorId = 12345,  -- MLO interior ID
         --     portalCoords = vec3(0.0, 0.0, 0.0),
         --     exitCoords = vec3(0.0, 0.0, 0.0)
@@ -511,5 +434,5 @@ Config.TicketItem = {
     weight = 10,
     unique = true,
     useable = true,
-    description = 'A valid transit ticket for the LSIA-Roxwood line'
+    description = 'A valid transit ticket for the LSIA-Paleto line'
 }
