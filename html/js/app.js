@@ -982,7 +982,7 @@ function updateSegmentTooltip(segmentEl, segmentId, data) {
             <div class="tooltip-header">${escapeHtml(data.name || segmentId)}</div>
             <div class="tooltip-row">
                 <span class="tooltip-label">Status:</span>
-                <span class="tooltip-value" style="color: #9b59b6;">🔒 LOCKED</span>
+                <span class="tooltip-value" style="color: var(--cd-cool);">🔒 LOCKED</span>
             </div>
             <div class="tooltip-row">
                 <span class="tooltip-label">Reason:</span>
@@ -992,8 +992,8 @@ function updateSegmentTooltip(segmentEl, segmentId, data) {
                 <span class="tooltip-label">Locked By:</span>
                 <span class="tooltip-value">${escapeHtml(data.lockedBy || 'Dispatcher')}</span>
             </div>
-            <div class="tooltip-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #0f3460;">
-                <span class="tooltip-label" style="color: #666; font-size: 10px;">Right-click to unlock</span>
+            <div class="tooltip-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--cd-border);">
+                <span class="tooltip-label" style="color: var(--cd-dim); font-size: 10px;">Right-click to unlock</span>
             </div>
         `;
     } else if (data.occupied && data.trainId) {
@@ -1030,10 +1030,10 @@ function updateSegmentTooltip(segmentEl, segmentId, data) {
             <div class="tooltip-header">${escapeHtml(data.name || segmentId)}</div>
             <div class="tooltip-row">
                 <span class="tooltip-label">Status:</span>
-                <span class="tooltip-value" style="color: #4ecca3;">CLEAR</span>
+                <span class="tooltip-value" style="color: var(--cd-sea);">CLEAR</span>
             </div>
-            <div class="tooltip-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #0f3460;">
-                <span class="tooltip-label" style="color: #666; font-size: 10px;">Right-click for options</span>
+            <div class="tooltip-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--cd-border);">
+                <span class="tooltip-label" style="color: var(--cd-dim); font-size: 10px;">Right-click for options</span>
             </div>
         `;
     }
@@ -1143,7 +1143,7 @@ function updateTrainList(trains) {
 
     if (!trains || trains.length === 0) {
         dispatcherTrainsList.innerHTML = `
-            <div class="train-item" style="justify-content: center; color: #666;">
+            <div class="train-item" style="justify-content: center; color: var(--cd-dim);">
                 No active trains
             </div>
         `;
@@ -1379,7 +1379,7 @@ function showSegmentContextMenu(event, segmentId, segmentData) {
         if (segmentData.lockReason) {
             menuItems += `
                 <div class="context-menu-divider"></div>
-                <div class="context-menu-item" style="color: #888; cursor: default; font-size: 11px;">
+                <div class="context-menu-item" style="color: var(--cd-dim); cursor: default; font-size: 11px;">
                     Reason: ${escapeHtml(segmentData.lockReason)}
                 </div>
             `;
@@ -1747,27 +1747,27 @@ function clearDelayIndicator(trainId) {
         }
 
         .service-alert.info {
-            background: rgba(52, 152, 219, 0.95);
-            border: 1px solid #2980b9;
-            color: white;
+            background: color-mix(in srgb, var(--cd-cool) 95%, transparent);
+            border: 1px solid color-mix(in srgb, var(--cd-cool) 70%, var(--cd-night));
+            color: var(--cd-ink);
         }
 
         .service-alert.warning {
-            background: rgba(241, 196, 15, 0.95);
-            border: 1px solid #f39c12;
-            color: #2c3e50;
+            background: color-mix(in srgb, var(--cd-warn) 95%, transparent);
+            border: 1px solid color-mix(in srgb, var(--cd-warn) 70%, var(--cd-night));
+            color: var(--cd-night);
         }
 
         .service-alert.error {
-            background: rgba(231, 76, 60, 0.95);
-            border: 1px solid #c0392b;
-            color: white;
+            background: color-mix(in srgb, var(--cd-bad) 95%, transparent);
+            border: 1px solid color-mix(in srgb, var(--cd-bad) 70%, var(--cd-night));
+            color: var(--cd-ink);
         }
 
         .service-alert.emergency {
-            background: rgba(155, 89, 182, 0.95);
-            border: 1px solid #8e44ad;
-            color: white;
+            background: color-mix(in srgb, var(--cd-cool) 95%, transparent);
+            border: 1px solid color-mix(in srgb, var(--cd-cool) 70%, var(--cd-night));
+            color: var(--cd-ink);
             animation: pulse 2s infinite;
         }
 
@@ -1823,24 +1823,24 @@ function clearDelayIndicator(trainId) {
         }
 
         .col-status.delayed {
-            color: #f39c12;
+            color: var(--cd-warn);
             font-weight: bold;
         }
 
         .col-status.emergency-stopped,
         .col-status.emergency_stopped {
-            color: #e74c3c;
+            color: var(--cd-bad);
             font-weight: bold;
             animation: blink 1s infinite;
         }
 
         .col-status.waiting-junction,
         .col-status.waiting_junction {
-            color: #9b59b6;
+            color: var(--cd-cool);
         }
 
         .col-status.resuming {
-            color: #27ae60;
+            color: var(--cd-ok);
         }
 
         @keyframes blink {
