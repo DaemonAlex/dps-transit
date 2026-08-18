@@ -95,7 +95,7 @@ end
 -- Get direction name
 function Transit.GetDirectionName(direction)
     if direction then
-        return "Northbound to Roxwood"
+        return "Northbound to Paleto"
     else
         return "Southbound to LSIA"
     end
@@ -104,7 +104,7 @@ end
 -- Get final destination based on direction
 function Transit.GetFinalDestination(direction)
     if direction then
-        return 'roxwood'
+        return 'paleto_junction'
     else
         return 'lsia'
     end
@@ -163,10 +163,16 @@ function Transit.GetNearestStation(coords)
     local nearestDist = math.huge
 
     for stationId, station in pairs(Config.Stations) do
-        local dist = Transit.GetDistance(coords, station.platform.xyz)
-        if dist < nearestDist then
-            nearestDist = dist
-            nearestId = stationId
+        -- Skip disabled/placeholder stations at (0,0,0). Blips (client/main.lua)
+        -- and target zones (client/stations.lua) already skip these; without the
+        -- same guard here a placeholder could be returned as "nearest" near map
+        -- origin and feed zone/force-exit logic.
+        if not (station.platform.x == 0 and station.platform.y == 0) then
+            local dist = Transit.GetDistance(coords, station.platform.xyz)
+            if dist < nearestDist then
+                nearestDist = dist
+                nearestId = stationId
+            end
         end
     end
 
@@ -251,9 +257,11 @@ function Transit.ValidateStationConfig()
         end
     end
 
-    -- Validate lines
+    -- Validate lines (only enabled ones; disabled lines like the metro may
+    -- intentionally reference stations that aren't defined yet)
     if Config.Lines then
         for lineId, line in pairs(Config.Lines) do
+          if line.enabled then
             if not line.track then
                 table.insert(errors, '[Line: ' .. lineId .. '] Missing track assignment')
             end
@@ -271,6 +279,7 @@ function Transit.ValidateStationConfig()
                     table.insert(warnings, '[Line: ' .. lineId .. '] North terminus "' .. line.terminus.north .. '" not found (may be expansion)')
                 end
             end
+          end
         end
     end
 

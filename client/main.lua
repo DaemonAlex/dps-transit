@@ -23,7 +23,12 @@ PlayerState = {
 
 -- Initialize client
 CreateThread(function()
-    Wait(1000)
+    -- The train natives silently no-op if called before the session is live, and
+    -- EnableTracks used to run once at Wait(1000) - too early on most clients, which
+    -- is why no ambient trains ever spawned. Wait for a real session and ped first.
+    while not NetworkIsSessionStarted() do Wait(250) end
+    while not DoesEntityExist(PlayerPedId()) do Wait(250) end
+    Wait(2000)
 
     -- Enable tracks
     EnableTracks()
@@ -44,20 +49,56 @@ CreateThread(function()
     Transit.Debug('Client initialized')
 end)
 
+-- Hold the ambient train settings. A single call at startup does not survive
+-- session transitions or respawns, so re-assert every 60s while ambient is on.
+CreateThread(function()
+    while not NetworkIsSessionStarted() do Wait(500) end
+    -- The engine resets track enable + spawn frequency continuously; Ehbw-Trains
+    -- re-asserts every 1000ms for exactly this reason. A 60s keepalive left the
+    -- tracks disabled ~98% of the time, which is why nothing ever spawned.
+    while true do
+        Wait(1000)
+        if Config.AmbientTrains then
+            SwitchTrainTrack(Config.Tracks.mainLine, true)
+            SwitchTrainTrack(Config.Tracks.metro, true)
+            SwitchTrainTrack(Config.Tracks.freight, true)
+            SetTrainTrackSpawnFrequency(Config.Tracks.mainLine, Config.AmbientSpawnMs or 300000)
+            SetTrainTrackSpawnFrequency(Config.Tracks.metro, Config.AmbientSpawnMs or 300000)
+            SetTrainTrackSpawnFrequency(Config.Tracks.freight, Config.AmbientSpawnMs or 300000)
+            SetRandomTrains(true)
+        end
+    end
+end)
+
 -- Enable train tracks
 function EnableTracks()
     -- Enable main tracks
     SwitchTrainTrack(Config.Tracks.mainLine, true)
     SwitchTrainTrack(Config.Tracks.metro, true)
 
-    -- Enable Roxwood tracks
-    SwitchTrainTrack(Config.Tracks.roxwoodFreight, true)
-    SwitchTrainTrack(Config.Tracks.roxwoodPassenger, true)
+    -- Ambient trains: freight on the main loop, passenger on the LS Metro, plus the
+    -- Sandy/Grapeseed freight siding. The scripted transit system shipped with all
+    -- seven stations on placeholder coords, so disabling ambient trains left the map
+    -- with none at all. Run ambient until real station coords are set, then flip
+    -- Config.AmbientTrains to false and the scripted timetable takes over.
+    if Config.AmbientTrains == nil then Config.AmbientTrains = true end
 
-    -- Disable random trains
-    SetTrainTrackSpawnFrequency(Config.Tracks.mainLine, 0)
-    SetTrainTrackSpawnFrequency(Config.Tracks.metro, 0)
-    SetRandomTrains(false)
+    if Config.AmbientTrains then
+        SwitchTrainTrack(Config.Tracks.freight, true)
+        -- spawn interval in ms: lower = more trains
+        SetTrainTrackSpawnFrequency(Config.Tracks.mainLine, 60000) -- freight, every 5 min
+        SetTrainTrackSpawnFrequency(Config.Tracks.metro, 60000)    -- passenger, every 5 min
+        SetTrainTrackSpawnFrequency(Config.Tracks.freight, 60000)  -- branch, every 5 min
+        SetRandomTrains(true)
+        Transit.Debug('Ambient trains ENABLED - freight on main line, passenger on metro')
+    else
+        -- dps-trains owns all train state now; touching these here fights it.
+        -- SetTrainTrackSpawnFrequency(Config.Tracks.mainLine, 0)
+        -- SetTrainTrackSpawnFrequency(Config.Tracks.metro, 0)
+        -- SetTrainTrackSpawnFrequency(Config.Tracks.freight, 0)
+        -- SetRandomTrains(false)
+        Transit.Debug('Ambient trains disabled - scripted transit in control')
+    end
 
     Transit.Debug('Tracks enabled')
 end
@@ -65,7 +106,7 @@ end
 -- Create station blips
 function CreateStationBlips()
     for stationId, station in pairs(Config.Stations) do
-        -- Skip if coordinates not set (like Roxwood TBD)
+        -- Skip if coordinates not set (placeholder stations)
         if station.platform.x == 0 and station.platform.y == 0 then
             goto continue
         end
@@ -152,8 +193,13 @@ RegisterNetEvent('dps-transit:client:spawnTrain', function(trainId, trainData)
         data = trainData,
         trainType = trainData.trainType,
         lineId = trainData.lineId,
-        canBoard = trainData.canBoard
+        canBoard = trainData.canBoard,
+        isOwner = false  -- Set true only if the server assigns us as authoritative owner
     }
+
+    -- Single-owner model: ack the spawn. The FIRST client to ack becomes the
+    -- authoritative owner and is the only one allowed to push occupancy updates.
+    TriggerServerEvent('dps-transit:server:trainSpawnAck', trainId)
 
     -- Create blip with line color
     if Config.Features.mapBlips then
@@ -164,6 +210,19 @@ RegisterNetEvent('dps-transit:client:spawnTrain', function(trainId, trainData)
     -- Log spawn type
     local typeLabel = trainData.trainType:upper()
     Transit.Debug('[' .. typeLabel .. '] Spawned:', trainId, 'on', trainData.lineId, 'entity:', train)
+end)
+
+-- Cache our own server id once for ownership comparisons.
+local MyServerId = nil
+
+-- Server tells every client who owns each train. Only the owner pushes occupancy.
+RegisterNetEvent('dps-transit:client:trainOwnerAssigned', function(trainId, ownerSrc)
+    MyServerId = MyServerId or GetPlayerServerId(PlayerId())
+    local train = LocalTrains[trainId]
+    if train then
+        train.isOwner = (ownerSrc == MyServerId)
+        Transit.Debug('OWNER: Train', trainId, train.isOwner and 'owned by us' or 'owned by another client')
+    end
 end)
 
 -- Create blip for train with type info
@@ -491,14 +550,20 @@ CreateThread(function()
                     status = train.data.status
                 }, true)
 
-                -- Fallback trigger for server sync
-                TriggerServerEvent('dps-transit:server:updateTrainPosition', trainId, pos, progress)
-
                 -- Check if near station
                 local nearStation, dist = Transit.GetNearestStation(pos)
-                if dist < 30.0 and train.data.status == 'running' then
-                    if nearStation ~= train.data.currentStation then
-                        TriggerServerEvent('dps-transit:server:trainAtStation', trainId, nearStation)
+
+                -- Single-owner model: only the authoritative owner pushes
+                -- occupancy/station reports. Non-owners still render + move their
+                -- local train, but stay silent to keep block signaling coherent
+                -- and kill the O(players x trains) event spam.
+                if train.isOwner then
+                    TriggerServerEvent('dps-transit:server:updateTrainPosition', trainId, pos, progress)
+
+                    if dist < 30.0 and train.data.status == 'running' then
+                        if nearStation ~= train.data.currentStation then
+                            TriggerServerEvent('dps-transit:server:trainAtStation', trainId, nearStation)
+                        end
                     end
                 end
 
@@ -872,7 +937,7 @@ CreateThread(function()
     while true do
         Wait(Config.Train.cleanup.cleanupInterval * 1000)
 
-        local now = os.time()
+        local now = math.floor(GetGameTimer() / 1000)
         local cleaned = 0
 
         for trainId, train in pairs(LocalTrains) do
@@ -908,11 +973,15 @@ CreateThread(function()
                     TrainBlips[trainId] = nil
                 end
 
+                local wasOwner = train.isOwner
                 LocalTrains[trainId] = nil
                 cleaned = cleaned + 1
 
-                -- Notify server
-                TriggerServerEvent('dps-transit:server:trainCleaned', trainId, reason)
+                -- Notify server only if we own the train; the server rejects
+                -- non-owner cleanup anyway, this just avoids the wasted event.
+                if wasOwner then
+                    TriggerServerEvent('dps-transit:server:trainCleaned', trainId, reason)
+                end
             end
         end
 
@@ -1131,7 +1200,7 @@ CreateThread(function()
                 end
 
                 -- CONDITION 3: Prevent duplicate triggers for same zone crossing
-                local now = os.time()
+                local now = math.floor(GetGameTimer() / 1000)
                 local isDuplicate = (LastZoneCrossing.fromZone == PlayerState.currentZone and
                                    LastZoneCrossing.toZone == newZone and
                                    (now - LastZoneCrossing.timestamp) < 60)
@@ -1290,7 +1359,7 @@ function IsPlayerAtStation()
 end
 
 -----------------------------------------------------------
--- DYNAMIC CURVATURE HANDLING (Roxwood Bridge)
+-- DYNAMIC CURVATURE HANDLING (curved track sections)
 -----------------------------------------------------------
 
 -- Track train headings for curve detection

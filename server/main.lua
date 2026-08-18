@@ -26,7 +26,9 @@ PlayerTickets = {}
 CreateThread(function()
     Wait(1000)
 
-    print('^5[dps-transit] Initializing DPS Transit System v2.3.1...^0')
+    -- Read the version from the manifest so this never drifts from fxmanifest.lua
+    local resourceVersion = GetResourceMetadata(GetCurrentResourceName(), 'version', 0) or '?'
+    print('^5[dps-transit] Initializing DPS Transit System v' .. resourceVersion .. '...^0')
 
     -- Run config validation
     local valid, errors, warnings = Transit.ValidateStationConfig()
@@ -52,9 +54,17 @@ end)
 -- TRAIN CLEANUP HANDLING
 -----------------------------------------------------------
 
--- Handle client-side train cleanup notifications
+-- Handle client-side train cleanup notifications.
+-- SECURITY: only the train's authoritative owner may delete it from ActiveTrains;
+-- otherwise any client could spoof this to remove any train. IsTrainOwner is a
+-- global defined in scheduler.lua (loaded after this file; resolved at call time).
 RegisterNetEvent('dps-transit:server:trainCleaned', function(trainId, reason)
+    local src = source
     if ActiveTrains[trainId] then
+        if IsTrainOwner and not IsTrainOwner(src, trainId) then
+            Transit.Debug('[SECURITY] trainCleaned rejected for source', src, 'on', trainId)
+            return
+        end
         Transit.Debug('Train', trainId, 'cleaned by client:', reason)
         ActiveTrains[trainId] = nil
     end
@@ -64,8 +74,12 @@ end)
 -- PLAYER DROP-OFF HANDLING (Disconnect Cleanup)
 -----------------------------------------------------------
 
--- Track players currently on trains
-local PlayersOnTrains = {}
+-- Track players currently on trains.
+-- SHARED across server files via the Transit table (shared/functions.lua) so
+-- scheduler.lua's RED-signal passenger announcements can read it. Keyed by
+-- citizenid; each entry stores { trainId, boardedAt, lastZone, source }.
+Transit.PlayersOnTrains = Transit.PlayersOnTrains or {}
+local PlayersOnTrains = Transit.PlayersOnTrains
 
 -- Register player boarding a train
 RegisterNetEvent('dps-transit:server:playerBoarded', function(trainId)
@@ -317,30 +331,47 @@ Bridge.OnPlayerLoaded(function(source)
     -- Clear memory tickets (will be restored from inventory)
     PlayerTickets[citizenid] = {}
 
-    -- If using persistent tickets, sync from inventory
-    if Config.Features.persistentTickets and GetResourceState('qs-inventory') == 'started' then
-        Wait(2000)  -- Wait for inventory to load
+    -- If using persistent tickets, sync from whichever inventory is running.
+    -- Previously this only handled qs-inventory, so on ox_inventory (this box's
+    -- inventory) persisted tickets were never restored on reconnect. Detect the
+    -- inventory here (preferring ox_inventory) and search accordingly.
+    if not Config.Features.persistentTickets then return end
 
-        local items = exports['qs-inventory']:GetItemsByName(source, 'transit_ticket')
-        if items then
-            for _, item in ipairs(items) do
-                local meta = item.info or item.metadata or {}
-                if meta.ticketId then
-                    table.insert(PlayerTickets[citizenid], {
-                        id = meta.ticketId,
-                        from = meta.from,
-                        to = meta.to,
-                        fare = meta.fare,
-                        expiresAt = meta.expiresAt,
-                        type = meta.type,
-                        used = false,
-                        slot = item.slot
-                    })
-                end
+    local inventory
+    if GetResourceState('ox_inventory') == 'started' then
+        inventory = 'ox_inventory'
+    elseif GetResourceState('qs-inventory') == 'started' then
+        inventory = 'qs-inventory'
+    end
+    if not inventory then return end
+
+    Wait(2000)  -- Wait for inventory to load
+
+    local items
+    if inventory == 'ox_inventory' then
+        items = exports.ox_inventory:Search(source, 'slots', 'transit_ticket')
+    else
+        items = exports['qs-inventory']:GetItemsByName(source, 'transit_ticket')
+    end
+
+    if items then
+        for _, item in ipairs(items) do
+            local meta = item.metadata or item.info or {}
+            if meta.ticketId then
+                table.insert(PlayerTickets[citizenid], {
+                    id = meta.ticketId,
+                    from = meta.from,
+                    to = meta.to,
+                    fare = meta.fare,
+                    expiresAt = meta.expiresAt,
+                    type = meta.type,
+                    used = false,
+                    slot = item.slot
+                })
             end
-
-            Transit.Debug('Restored', #PlayerTickets[citizenid], 'tickets for', citizenid)
         end
+
+        Transit.Debug('Restored', #PlayerTickets[citizenid], 'tickets for', citizenid, 'via', inventory)
     end
 end)
 

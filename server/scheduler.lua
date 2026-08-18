@@ -1,7 +1,7 @@
 --[[
     DPS-Transit Scheduler
     Manages automatic train spawning with 70/30 passenger/freight split
-    Supports multiple lines: Regional (Track 0), Metro (Track 3), Roxwood (Track 13)
+    Supports multiple lines: Regional (Track 0), Metro (Track 3)
 ]]
 
 -- Active trains by line
@@ -26,8 +26,110 @@ local EmergencyHold = {
 local TrackOccupancy = {
     [0] = {},   -- Regional line
     [3] = {},   -- Metro line
-    [13] = {}   -- Roxwood line
+    [12] = {}   -- Sandy/Grapeseed freight siding
 }
+
+-----------------------------------------------------------
+-- SINGLE-OWNER TRAIN MODEL (v2.8.0)
+-----------------------------------------------------------
+--[[
+    Trains spawn as native CreateMissionTrain entities on EVERY client (each
+    client needs the visual locally), but block-signal occupancy must have ONE
+    authoritative source. Previously every client pushed updateTrainPosition for
+    its own copy -> N conflicting occupancy reports and O(players x trains) event
+    spam, which is the root cause of the collision/deadlock reports.
+
+    Model (no server-side train physics):
+      * Server broadcasts spawnTrain to -1. Each client creates the visual and
+        replies with trainSpawnAck. The FIRST ack claims ownership
+        (ActiveTrains[id].owner = src); the assignment is broadcast so every
+        client learns whether it owns the train.
+      * ONLY the owner's updateTrainPosition / trainAtStation / trainDeparting /
+        trainCleaned events mutate authoritative state (see IsTrainOwner gating).
+        Non-owners still render and move their local train, but never push
+        occupancy.
+      * If the owner disconnects/unloads, HandleOwnerDisconnect() reassigns the
+        train to the nearest remaining player and re-broadcasts ownership. If no
+        players remain, the train's block occupancy is released so the line can't
+        deadlock; the stale-timeout / spawn backstop then reclaims it.
+]]
+
+-- True if src is the authoritative owner of trainId.
+function IsTrainOwner(src, trainId)
+    local train = ActiveTrains[trainId]
+    return train ~= nil and train.owner == src
+end
+
+-- Assign (or reassign) a train's owner and inform all clients.
+function AssignTrainOwner(trainId, src)
+    local train = ActiveTrains[trainId]
+    if not train then return end
+    train.owner = src
+    TriggerClientEvent('dps-transit:client:trainOwnerAssigned', -1, trainId, src)
+    Transit.Debug('OWNER: Train', trainId, 'assigned to source', src)
+end
+
+-- Pick the connected player nearest the train's last known position.
+-- excludeSrc lets a disconnecting player be skipped (they may still briefly
+-- appear in the player list during playerDropped).
+function FindNearestPlayerToTrain(train, excludeSrc)
+    local tp = train and train.currentPosition
+    local trainPos = tp and vec3(tp.x, tp.y, tp.z) or nil
+    local best, bestDist = nil, math.huge
+
+    for _, playerId in ipairs(Bridge.GetPlayers()) do
+        if playerId ~= excludeSrc then
+            local ped = GetPlayerPed(playerId)
+            if ped and ped ~= 0 then
+                if not trainPos then
+                    return playerId  -- Unknown train pos: any connected player works
+                end
+                local d = #(GetEntityCoords(ped) - trainPos)
+                if d < bestDist then
+                    bestDist = d
+                    best = playerId
+                end
+            end
+        end
+    end
+
+    return best
+end
+
+-- First client to ack a spawn becomes the owner.
+RegisterNetEvent('dps-transit:server:trainSpawnAck', function(trainId)
+    local src = source
+    local train = ActiveTrains[trainId]
+    if not train then return end
+    if train.owner == nil then
+        AssignTrainOwner(trainId, src)
+    end
+end)
+
+-- Reassign every train owned by a departing/unloading source.
+function HandleOwnerDisconnect(src)
+    if not src then return end
+    for trainId, train in pairs(ActiveTrains) do
+        if train.owner == src then
+            local newOwner = FindNearestPlayerToTrain(train, src)
+            if newOwner then
+                AssignTrainOwner(trainId, newOwner)
+            else
+                -- No one left to drive occupancy: release blocks so the line
+                -- doesn't deadlock; backstop / next spawn reclaims it.
+                train.owner = nil
+                CleanupTrainFromBlocks(trainId)
+                Transit.Debug('OWNER: Train', trainId, 'orphaned (no players) - occupancy released')
+            end
+        end
+    end
+end
+
+-- Disconnect triggers owner reassignment (character-unload handled in main.lua's
+-- Bridge.OnPlayerUnload path is disconnect-adjacent; playerDropped covers drops).
+AddEventHandler('playerDropped', function()
+    HandleOwnerDisconnect(source)
+end)
 
 -----------------------------------------------------------
 -- VIRTUAL BLOCK SIGNALING SYSTEM
@@ -86,6 +188,9 @@ local SIGNAL_RED = 'red'
 
 -- Manual segment overrides: { segmentId = { state, reason, setBy, setAt } }
 local SegmentOverrides = {}
+
+-- Dispatcher-initiated holds (referenced from heartbeat at line ~144; populated by handlers below)
+local DispatcherHolds = {}
 
 -- Override state constants
 local OVERRIDE_LOCKED = 'locked'   -- Force RED, no trains may enter
@@ -348,12 +453,26 @@ function EnterSegment(trainId, segmentId)
 
     -- Schedule delayed release of previous segment (for carriage clearance)
     local previousState = TrainSignalStates[trainId]
-    if previousState and previousState.currentSegment then
+    local keepBehind = previousState and previousState.currentSegment
+    if keepBehind then
         -- Use appropriate delay based on train type
         local train = ActiveTrains[trainId]
         local trainType = (train and train.isFreight) and 'freight' or 'passenger'
         local delay = CARRIAGE_CLEARANCE_DELAY[trainType] or CARRIAGE_CLEARANCE_DELAY.passenger
-        ScheduleSegmentRelease(trainId, previousState.currentSegment, delay)
+        ScheduleSegmentRelease(trainId, keepBehind, delay)
+    end
+
+    -- PROMPT RELEASE (backstop-independent): the engine has entered a NEW segment,
+    -- so any segment this train still occupies other than the new one and the
+    -- immediately-previous one (which is under legitimate carriage-clearance delay)
+    -- is behind the tail and must be clear. Release it NOW so it can't keep a
+    -- scheduled line RED-blocked for up to 5 minutes waiting on the stale timeout.
+    for occSegId, occ in pairs(SegmentOccupancy) do
+        if occ and occ.trainId == trainId and occSegId ~= segmentId and occSegId ~= keepBehind then
+            SegmentOccupancy[occSegId] = nil
+            PendingSegmentReleases[occSegId] = nil
+            Transit.Debug('BLOCK: Prompt-released trailing segment', occSegId, 'for train', trainId)
+        end
     end
 
     -- Occupy new segment immediately (engine is in new segment)
@@ -383,16 +502,25 @@ function EnterSegment(trainId, segmentId)
     return true
 end
 
+-- Monotonic token so a superseded release timer can't clobber a segment that
+-- was re-occupied or re-scheduled after it was queued.
+local ReleaseTokenSeq = 0
+
 -- Schedule a delayed segment release (for carriage clearance)
 function ScheduleSegmentRelease(trainId, segmentId, delaySeconds)
-    -- Cancel any existing pending release for this segment
+    ReleaseTokenSeq = ReleaseTokenSeq + 1
+    local token = ReleaseTokenSeq
+
+    -- Cancel-and-reschedule cleanly: overwriting the entry orphans the previous
+    -- timer, which the token check below will make a no-op.
     if PendingSegmentReleases[segmentId] then
-        Transit.Debug('BLOCK: Cancelling pending release for', segmentId)
+        Transit.Debug('BLOCK: Superseding pending release for', segmentId)
     end
 
     PendingSegmentReleases[segmentId] = {
         trainId = trainId,
-        releaseAt = os.time() + delaySeconds
+        releaseAt = os.time() + delaySeconds,
+        token = token
     }
 
     Transit.Debug('BLOCK: Scheduled release of', segmentId, 'in', delaySeconds, 'seconds (carriage clearance)')
@@ -400,7 +528,9 @@ function ScheduleSegmentRelease(trainId, segmentId, delaySeconds)
     -- Use SetTimeout for the delayed release
     SetTimeout(delaySeconds * 1000, function()
         local pending = PendingSegmentReleases[segmentId]
-        if pending and pending.trainId == trainId then
+        -- Only fire if THIS scheduling is still the active one (token match) and
+        -- still owned by the same train.
+        if pending and pending.token == token and pending.trainId == trainId then
             LeaveSegment(trainId, segmentId)
             PendingSegmentReleases[segmentId] = nil
         end
@@ -594,11 +724,13 @@ function UpdateTrainBlockPosition(trainId, position, trackId, direction)
             })
         end
 
-        -- If RED, notify passengers on the train
+        -- If RED, notify passengers on the train.
+        -- Reads the SHARED Transit.PlayersOnTrains (populated in server/main.lua),
+        -- keyed by citizenid with { trainId, source } entries.
         if signalState == SIGNAL_RED and Config.BlockSignaling.announcements.notifyPassengers then
-            for playerId, playerTrainId in pairs(PlayersOnTrains or {}) do
-                if playerTrainId == trainId then
-                    TriggerClientEvent('dps-transit:client:signalHoldAnnouncement', playerId, {
+            for _, data in pairs(Transit.PlayersOnTrains or {}) do
+                if data.trainId == trainId and data.source then
+                    TriggerClientEvent('dps-transit:client:signalHoldAnnouncement', data.source, {
                         segmentName = segmentName,
                         reason = 'Train ahead in ' .. (nextName or 'next section')
                     })
@@ -715,14 +847,11 @@ function ProcessLineSchedule(lineId)
 
     if not line or not schedule or not slots then return end
 
-    -- Get current game time or real time
-    local currentMinute
-    if Config.Schedule.useGameTime then
-        local hour, minute = GetClockHours(), GetClockMinutes()
-        currentMinute = minute
-    else
-        currentMinute = tonumber(os.date('%M'))
-    end
+    -- Get current time. NOTE: GetClockHours/GetClockMinutes are CLIENT-ONLY
+    -- natives and return nil (then error) here on the server. This scheduler is
+    -- fully server-side, so we always use os.date(); honouring useGameTime would
+    -- require a client->server game-clock sync that this resource does not have.
+    local currentMinute = tonumber(os.date('%M'))
 
     -- Skip if we already processed this minute
     if currentMinute == schedule.lastMinute then return end
@@ -875,7 +1004,8 @@ function SpawnScheduledTrain(lineId, slot)
         currentTrack = line.track,
         spawnTime = os.time(),
         passengers = 0,
-        canBoard = (slot.type == 'passenger')  -- Only passenger trains allow boarding
+        canBoard = (slot.type == 'passenger'),  -- Only passenger trains allow boarding
+        owner = nil  -- Authoritative client; claimed by the first trainSpawnAck (see single-owner model)
     }
 
     -- Register in active trains
@@ -970,8 +1100,12 @@ end
 
 -- Handle train arriving at station
 RegisterNetEvent('dps-transit:server:trainAtStation', function(trainId, stationId)
+    local src = source
     local train = ActiveTrains[trainId]
     if not train then return end
+
+    -- Only the authoritative owner may drive arrival/status transitions.
+    if not IsTrainOwner(src, trainId) then return end
 
     train.currentStation = stationId
     train.status = 'boarding'
@@ -995,8 +1129,12 @@ end)
 
 -- Handle train departing station
 RegisterNetEvent('dps-transit:server:trainDeparting', function(trainId, stationId)
+    local src = source
     local train = ActiveTrains[trainId]
     if not train then return end
+
+    -- Only the authoritative owner may drive departure/junction transitions.
+    if not IsTrainOwner(src, trainId) then return end
 
     local station = Config.Stations[stationId]
     if not station then return end
@@ -1057,13 +1195,13 @@ local BlockSignals = {
     junctions = {
         ['paleto_junction'] = {
             coords = vec3(2521.0, 6135.0, 39.0),  -- Approximate junction coords
-            tracks = { 0, 13 },  -- Tracks that meet here
+            tracks = { 0, 12 },  -- Main line + freight siding meet here
             blockRadius = 300.0,  -- Block signal radius
             safeStopZone = {
                 -- Trains approaching from Track 0 stop here (before switch)
                 [0] = vec3(2470.0, 5850.0, 38.0),
-                -- Trains approaching from Track 13 stop here (before switch)
-                [13] = vec3(2570.0, 6180.0, 40.0)
+                -- Trains approaching from Track 12 (freight) stop here (before switch)
+                [12] = vec3(2570.0, 6180.0, 40.0)
             }
         }
     }
@@ -1391,8 +1529,18 @@ exports('IsJunctionOccupied', IsJunctionOccupied)
 
 -- Update train position (from client)
 RegisterNetEvent('dps-transit:server:updateTrainPosition', function(trainId, position, progress)
+    local src = source
     local train = ActiveTrains[trainId]
     if not train then return end
+
+    -- Single-owner integrity: only the authoritative owner drives occupancy.
+    -- Adopt-on-first-report fallback keeps a train reporting if its spawn ack
+    -- was lost (owner still nil); otherwise reject spoofed/duplicate reporters.
+    if train.owner == nil then
+        AssignTrainOwner(trainId, src)
+    elseif not IsTrainOwner(src, trainId) then
+        return
+    end
 
     train.currentPosition = position
     train.trackProgress = progress
@@ -1681,13 +1829,24 @@ end)
 -- FREIGHT TRAIN INTEGRATION
 -----------------------------------------------------------
 
--- Register external freight (from BigDaddy-Trains or similar)
-RegisterNetEvent('dps-transit:server:registerFreight', function(freightId, trackId, position)
+-- Tracks that may legitimately carry externally-registered freight occupancy.
+local FREIGHT_ALLOWED_TRACKS = {
+    [0] = true,   -- Regional / main line
+    [3] = true,   -- Metro
+    [12] = true   -- Sandy/Grapeseed freight siding
+}
+
+-- Internal register/unregister (server-authoritative; used by the export path).
+local function RegisterFreightInternal(freightId, trackId, position)
+    if not FREIGHT_ALLOWED_TRACKS[trackId] then
+        Transit.Debug('registerFreight ignored: unknown track', trackId)
+        return
+    end
     if not TrackOccupancy[trackId] then
         TrackOccupancy[trackId] = {}
     end
 
-    TrackOccupancy[trackId]['freight_' .. freightId] = {
+    TrackOccupancy[trackId]['freight_' .. tostring(freightId)] = {
         progress = position or 0,
         isFreight = true,
         isExternal = true,
@@ -1695,13 +1854,36 @@ RegisterNetEvent('dps-transit:server:registerFreight', function(freightId, track
     }
 
     Transit.Debug('External freight registered:', freightId, 'on track', trackId)
+end
+
+local function UnregisterFreightInternal(freightId, trackId)
+    if TrackOccupancy[trackId] then
+        TrackOccupancy[trackId]['freight_' .. tostring(freightId)] = nil
+        Transit.Debug('External freight unregistered:', freightId)
+    end
+end
+
+-- Register external freight (from BigDaddy-Trains or similar).
+-- SECURITY: previously any client could inject/remove arbitrary TrackOccupancy
+-- entries and deadlock any track at will. The net path now requires dispatcher
+-- access and a known track; trusted server resources should use the
+-- RegisterFreightTrain export instead (which bypasses the client gate).
+RegisterNetEvent('dps-transit:server:registerFreight', function(freightId, trackId, position)
+    local src = source
+    if src and src > 0 and not HasDispatcherAccess(src) then
+        Transit.Debug('[SECURITY] registerFreight rejected for source', src)
+        return
+    end
+    RegisterFreightInternal(freightId, trackId, position)
 end)
 
 RegisterNetEvent('dps-transit:server:unregisterFreight', function(freightId, trackId)
-    if TrackOccupancy[trackId] then
-        TrackOccupancy[trackId]['freight_' .. freightId] = nil
-        Transit.Debug('External freight unregistered:', freightId)
+    local src = source
+    if src and src > 0 and not HasDispatcherAccess(src) then
+        Transit.Debug('[SECURITY] unregisterFreight rejected for source', src)
+        return
     end
+    UnregisterFreightInternal(freightId, trackId)
 end)
 
 -----------------------------------------------------------
@@ -1884,9 +2066,6 @@ exports('HasDispatcherAccess', HasDispatcherAccess)
 -- DISPATCHER EMERGENCY ACTIONS
 -- Manual override controls from dispatcher panel
 -----------------------------------------------------------
-
--- Track dispatcher-initiated holds (separate from automatic signal holds)
-local DispatcherHolds = {}
 
 -- Handle emergency stop/release from dispatcher panel
 RegisterNetEvent('dps-transit:server:dispatcherEmergencyAction', function(trainId, action)
@@ -2150,5 +2329,9 @@ exports('GetSegmentOverride', GetSegmentOverride)
 exports('GetAllSegmentOverrides', GetAllSegmentOverrides)
 
 exports('RegisterFreightTrain', function(id, track, pos)
-    TriggerEvent('dps-transit:server:registerFreight', id, track, pos)
+    RegisterFreightInternal(id, track, pos)
+end)
+
+exports('UnregisterFreightTrain', function(id, track)
+    UnregisterFreightInternal(id, track)
 end)

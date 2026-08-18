@@ -3,8 +3,8 @@ game 'gta5'
 
 name 'dps-transit'
 author 'DaemonAlex'
-description 'Multi-modal transit system - Regional Rail, Metro, Roxwood Line, and AI Shuttle Buses with 70/30 passenger/freight scheduling'
-version '2.7.0'
+description 'Multi-modal transit system - Regional Rail, Metro, and AI Shuttle Buses with 70/30 passenger/freight scheduling'
+version '2.8.0'
 
 lua54 'yes'
 
@@ -32,10 +32,12 @@ files {
     'html/js/*.js',
     'locales/*.json',
     'bridge/qb.lua',
-    'bridge/esx.lua'
+    'bridge/esx.lua',
+    'bridge/qbx.lua'
 }
 
 dependencies {
     'ox_lib',
-    'ox_target'
+    'ox_target',
+    'qbx_core'
 }
