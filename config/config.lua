@@ -351,7 +351,7 @@ Config.Blips = {
     trains = {
         sprite = 408,       -- Train icon
         scale = 0.7,
-        shortRange = false
+        shortRange = true  -- DPS: only show nearby
     }
 }
 
