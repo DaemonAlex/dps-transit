@@ -12,6 +12,12 @@ StationBlips = {}
 -- Train blips
 TrainBlips = {}
 
+-- Per-train signal state. Declared HERE (not further down the file) because the
+-- position-tracking thread and the fare sweep reference it well before that
+-- point; as a late 'local' those references resolved to a nil global and killed
+-- both threads on their first tick.
+TrainSignalStates = {}
+
 -- Current player state
 PlayerState = {
     currentTrain = nil,
@@ -1772,7 +1778,7 @@ end
 -----------------------------------------------------------
 
 -- Current signal states for each train
-local TrainSignalStates = {}
+-- (TrainSignalStates is declared at the top of this file)
 
 -- Frozen carriages during RED signal
 local FrozenCarriages = {}

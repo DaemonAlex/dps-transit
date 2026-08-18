@@ -834,9 +834,13 @@ function ReleaseEmergencyBrake(source, trainId)
         end
     end
 
-    -- Release the brake
+    -- Release the brake. The train may have been removed (terminus/cleanup) while
+    -- it was held; without this guard the 30s auto-release thread nil-indexed
+    -- ActiveTrains and died permanently, so no later emergency stop ever released.
     EmergencyStoppedTrains[trainId] = nil
-    ActiveTrains[trainId].status = 'running'
+    if ActiveTrains[trainId] then
+        ActiveTrains[trainId].status = 'running'
+    end
 
     TriggerClientEvent('dps-transit:client:emergencyBrake', -1, trainId, false)
     TriggerClientEvent('dps-transit:client:emergencyHold', -1, { active = false })
@@ -854,9 +858,11 @@ CreateThread(function()
         local now = os.time()
 
         for trainId, data in pairs(EmergencyStoppedTrains) do
-            if now >= data.holdUntil then
+            if not ActiveTrains[trainId] then
+                EmergencyStoppedTrains[trainId] = nil   -- train is gone; drop the stale hold
+            elseif data and data.holdUntil and now >= data.holdUntil then
                 Transit.Debug('Auto-releasing emergency brake for train', trainId)
-                ReleaseEmergencyBrake(nil, trainId)
+                pcall(ReleaseEmergencyBrake, nil, trainId)
             end
         end
     end

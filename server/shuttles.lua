@@ -148,16 +148,54 @@ function SpawnShuttle(routeId)
         passengers = 0
     }
 
+    -- Elect ONE client to create the shuttle. This was broadcast to -1 and every
+    -- client created its own NETWORKED bus, so N players meant N duplicate buses
+    -- stacked at the first stop, each independently driving the route.
+    local spawnCoords = vector3(startStop.coords.x, startStop.coords.y, startStop.coords.z or 0.0)
+    local owner, ownerDist = nil, math.huge
+    for _, pid in ipairs(GetPlayers()) do
+        local ped = GetPlayerPed(pid)
+        if ped and ped ~= 0 then
+            local d = #(GetEntityCoords(ped) - spawnCoords)
+            if d < ownerDist then owner, ownerDist = tonumber(pid), d end
+        end
+    end
+
+    -- Nobody near enough to stream it in; don't register a shuttle that can't exist
+    if not owner or ownerDist > (Config.ShuttleSpawnRadius or 400.0) then
+        return nil
+    end
+
+    shuttleData.owner = owner
+
     -- Register shuttle
     ActiveShuttles[shuttleId] = shuttleData
 
-    -- Notify clients to spawn
-    TriggerClientEvent('dps-transit:client:spawnShuttle', -1, shuttleId, shuttleData)
+    -- Notify the elected client to spawn
+    TriggerClientEvent('dps-transit:client:spawnShuttle', owner, shuttleId, shuttleData)
 
     Transit.Debug('Spawned shuttle:', shuttleId, 'on route', routeId)
 
     return shuttleId
 end
+
+-- Reap stale shuttles. Clients never report route completion, so without this
+-- ActiveShuttles filled to the per-route cap and shuttle service stopped for good.
+CreateThread(function()
+    while true do
+        Wait(60000)
+        local now = os.time()
+        local maxAge = Config.ShuttleMaxAge or 3600
+        for id, s in pairs(ActiveShuttles) do
+            local stale = (s.spawnTime and (now - s.spawnTime) > maxAge)
+            local ownerGone = (s.owner and GetPlayerName(s.owner) == nil)
+            if stale or ownerGone then
+                ActiveShuttles[id] = nil
+                TriggerClientEvent('dps-transit:client:removeShuttle', -1, id)
+            end
+        end
+    end
+end)
 
 -- Remove shuttle
 function RemoveShuttle(shuttleId)
