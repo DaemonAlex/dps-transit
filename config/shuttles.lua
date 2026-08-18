@@ -3,9 +3,7 @@
     AI-driven shuttle buses connecting train lines
 
     Shuttle Routes:
-    A: Paleto ↔ Roxwood (CRITICAL - only link to expansion)
-    B-C: Roxwood internal connections
-    D-H: LS Metro ↔ Regional Rail connections
+    D-H: LS Metro <-> Regional Rail connections
 ]]
 
 Config.Shuttles = {
@@ -34,49 +32,6 @@ Config.Shuttles = {
 ]]
 
 Config.ShuttleRoutes = {
-    --[[
-        ROUTE A: PALETO ↔ ROXWOOD
-        CRITICAL: Only connection between main island and Roxwood expansion
-        Connects Regional Rail (Track 0) to Roxwood Railroad (Track 13)
-    ]]
-    ['A'] = {
-        name = 'Paleto - Roxwood Express',
-        shortName = 'Route A',
-        enabled = false,  -- Enable when Roxwood coords are set
-        priority = 1,     -- High priority route
-
-        -- Route endpoints
-        stops = {
-            {
-                id = 'paleto_shuttle',
-                name = 'Paleto Bay Shuttle Stop',
-                coords = vec4(150.0, 6400.0, 31.0, 45.0),  -- Near Paleto Junction station
-                waitingArea = vec3(152.0, 6402.0, 31.0),
-                connectsTo = 'paleto_junction',  -- Train station connection
-                line = 'regional'
-            },
-            {
-                id = 'roxwood_shuttle',
-                name = 'Roxwood South Shuttle Stop',
-                coords = vec4(0.0, 0.0, 0.0, 0.0),  -- TBD: Roxwood expansion
-                waitingArea = vec3(0.0, 0.0, 0.0),
-                connectsTo = 'roxwood',
-                line = 'roxwood'
-            }
-        },
-
-        -- Route waypoints (for AI pathfinding)
-        waypoints = {
-            -- TBD: Add intermediate waypoints for bridge crossing
-        },
-
-        schedule = {
-            frequency = 15,  -- Every 15 minutes (lower frequency for long route)
-            peakMultiplier = 1.5,
-            nightEnabled = false  -- No night service on this route
-        }
-    },
-
     --[[
         ROUTE D: MIRROR PARK CONNECTION
         Connects Regional Rail to nearest Metro station
@@ -311,7 +266,6 @@ Config.BusModels = {
 
 -- Route to bus model mapping
 Config.RouteModels = {
-    ['A'] = 'coach',     -- Long route to Roxwood
     ['D'] = 'bus',
     ['E'] = 'bus',
     ['F'] = 'bus',

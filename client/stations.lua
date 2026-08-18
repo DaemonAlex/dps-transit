@@ -317,7 +317,7 @@ function OpenScheduleDisplay(stationId)
         for _, departure in ipairs(schedule.nextDepartures) do
             local depStation = Config.Stations[departure.station]
             if depStation then
-                local timeUntil = departure.time - os.time()
+                local timeUntil = departure.time - GetCloudTimeAsInt()
                 table.insert(options, {
                     title = depStation.shortName .. ' → ' .. departure.destination,
                     description = Transit.FormatETA(timeUntil),

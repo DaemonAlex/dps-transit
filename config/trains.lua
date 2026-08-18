@@ -49,7 +49,14 @@ Config.Lines = {
         name = 'LS Metro',
         shortName = 'MET',
         track = 3,
-        enabled = true,
+        -- DISABLED: the metro stations referenced below (metro_airport, metro_davis,
+        -- metro_downtown, metro_del_perro) do not exist in config/stations.lua, so
+        -- SpawnScheduledTrain would log "Invalid start station" every matching minute.
+        -- Underground metro platform coords are not trivially derivable, so the line
+        -- is disabled rather than seeded with bad coordinates. Only Regional is
+        -- implemented. To enable the metro, first add the metro_* station
+        -- definitions, then flip this to true.
+        enabled = false,
         color = 3,  -- Blue blip
 
         schedule = {
@@ -63,31 +70,6 @@ Config.Lines = {
         terminus = {
             south = 'metro_airport',
             north = 'metro_del_perro'
-        }
-    },
-
-    --[[
-        ROXWOOD LINE (Track 13)
-        Expansion area rail service
-        Service: 70% Passenger / 30% Freight
-    ]]
-    ['roxwood'] = {
-        name = 'Roxwood Rail',
-        shortName = 'ROX',
-        track = 13,
-        enabled = false,  -- Disabled until coords are set
-        color = 2,  -- Green blip
-
-        schedule = {
-            passengerRatio = 70,
-            freightRatio = 30,
-        },
-
-        stations = { 'paleto_junction', 'roxwood' },
-
-        terminus = {
-            south = 'paleto_junction',
-            north = 'roxwood'
         }
     }
 }
@@ -152,21 +134,6 @@ Config.Consists = {
             maxPassengers = 8,
             lines = { 'metro' },
             customConfig = 'metro_config01'
-        },
-
-        -- Roxwood passenger
-        ['roxwood_passenger'] = {
-            name = 'Roxwood Passenger',
-            variation = 25,
-            locomotive = 'streakcoaster',
-            cars = {
-                'streakc',
-                'streakc',
-                'streakc'
-            },
-            maxPassengers = 28,
-            lines = { 'roxwood' },
-            customConfig = 'passenger_config02'
         }
     },
 
@@ -189,7 +156,7 @@ Config.Consists = {
                 'freightboxlarge',
                 'freightcaboose'
             },
-            lines = { 'regional', 'roxwood' },
+            lines = { 'regional' },
             customConfig = 'freight_config01'
         },
 
@@ -239,22 +206,8 @@ Config.Consists = {
                 'freightbeam',
                 'freightcaboose'
             },
-            lines = { 'regional', 'roxwood' },
+            lines = { 'regional' },
             customConfig = 'freight_config04'
-        },
-
-        -- Short freight - for Roxwood line
-        ['freight_short'] = {
-            name = 'Short Haul Freight',
-            variation = 4,
-            locomotive = 'sd70mac',
-            cars = {
-                'freightcont',
-                'freightboxlarge',
-                'freightcaboose'
-            },
-            lines = { 'roxwood' },
-            customConfig = 'freight_config05'
         }
     }
 }
@@ -306,14 +259,6 @@ Config.ScheduleSlots = {
         { minute = 45, type = 'passenger', consist = 'metro_light' },
         { minute = 50, type = 'passenger', consist = 'metro_light' },
         { minute = 55, type = 'passenger', consist = 'metro_light' }
-    },
-
-    roxwood = {
-        -- Roxwood runs every 15 minutes, 70/30 split (4 slots = 3P + 1F)
-        { minute = 0,  type = 'passenger', consist = 'roxwood_passenger' },
-        { minute = 15, type = 'passenger', consist = 'roxwood_passenger' },
-        { minute = 30, type = 'freight',   consist = 'freight_short' },
-        { minute = 45, type = 'passenger', consist = 'roxwood_passenger' }
     }
 }
 

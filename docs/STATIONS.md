@@ -1,28 +1,27 @@
 # DPS-Transit Station Guide
 
-**Version**: 2.4.3
+**Version**: 2.8.0
 **Date**: 2026-01-01
 
 ---
 
 ## Station Network Overview
 
-The Los Santos Metropolitan Transit Authority operates passenger rail service across three zones, connecting Los Santos International Airport to Roxwood County.
+The Los Santos Metropolitan Transit Authority operates passenger rail service across two zones, connecting Los Santos International Airport to Paleto Junction (Blaine County).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           PASSENGER RAIL ROUTE                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   LSIA ──→ Davis ──→ Downtown ──→ Del Perro ──→ Junction ──→ Roxwood       │
-│   Zone A   Zone A    Zone A       Zone A        Zone B       Zone C         │
-│   Track 0  Track 0   Track 0      Track 0       Track 0/13   Track 13       │
+│   LSIA ──→ Davis ──→ Downtown ──→ Del Perro ──→ Paleto Junction            │
+│   Zone A   Zone A    Zone A       Zone A        Zone B                      │
+│   Track 0  Track 0   Track 0      Track 0       Track 0                     │
 │                                                                             │
-│   Note: Paleto Junction is where Track 0 and Track 13 intersect.           │
-│   The bridge south of Paleto Bay curves NNE into Roxwood County.           │
+│   Paleto Junction is the northern terminus of the passenger line.          │
 │                                                                             │
-│   Sandy Shores & Grapeseed are on Track 0 east of the junction.            │
-│   They are freight-only and not on the passenger route.                    │
+│   Sandy Shores & Grapeseed are freight sidings (Track 12) branching east   │
+│   of the junction. They are freight-only and not on the passenger route.   │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -153,9 +152,9 @@ Stations['del_perro'] = {
 ## Zone B: Blaine County
 
 ### Paleto Junction
-**Transfer point where Track 0 (main line) meets Track 13 (Roxwood passenger line).**
+**Northern terminus of the passenger line (Track 0).**
 
-Located south of Paleto Bay where the bridge curves NNE into Roxwood County.
+Freight-only sidings (Sandy Shores / Grapeseed, Track 12) branch east of here.
 
 ```lua
 Stations['paleto_junction'] = {
@@ -163,59 +162,21 @@ Stations['paleto_junction'] = {
     name = 'Paleto Junction',
     shortName = 'Junction',
     zone = 'B',
-    track = 0,  -- On main line, but connects to Track 13
+    track = 0,
 
     -- ESTIMATED COORDINATES - Verify in-game
     -- Located on eastern approach to Paleto, south of town
-    -- Where the Roxwood bridge branches off NNE
     platform = vec4(650.0, 5650.0, 35.0, 315.0),
     kiosk = vec4(654.0, 5654.0, 35.0, 135.0),
     waitingArea = vec3(658.0, 5658.0, 35.0),
 
-    nextStation = 'roxwood',
+    nextStation = nil,  -- Northern terminus
     prevStation = 'del_perro',
-    trackProgress = 0.70,
-
-    hasParking = true,
-    hasRestrooms = true,
-    hasCafe = false,
-    isAccessible = true,
-
-    -- Special: Junction point
-    isJunction = true,
-    connectsToTrack = 13  -- Roxwood Passenger Line branches here
-    -- Track 0 continues to Paleto Bay, Sandy Shores, Grapeseed (freight only)
-}
-```
-
----
-
-## Zone C: Roxwood County
-
-### Roxwood Central Station
-**Northern terminus of the passenger network.**
-
-```lua
-Stations['roxwood'] = {
-    id = 'roxwood',
-    name = 'Roxwood Central Station',
-    shortName = 'Roxwood',
-    zone = 'C',
-    track = 13,  -- Roxwood Passenger Line
-
-    -- TBD: Coordinates depend on Roxwood MLO placement
-    -- The passenger train uses: amb_statrac_loc + ambpepascarriage1/3
-    platform = vec4(0.0, 0.0, 0.0, 0.0),  -- To be determined
-    kiosk = vec4(0.0, 0.0, 0.0, 0.0),
-    waitingArea = vec3(0.0, 0.0, 0.0),
-
-    nextStation = nil,  -- Terminus
-    prevStation = 'paleto_junction',
     trackProgress = 1.0,
 
     hasParking = true,
     hasRestrooms = true,
-    hasCafe = true,
+    hasCafe = false,
     isAccessible = true,
     isTerminus = true
 }
@@ -277,23 +238,10 @@ Config.Stations = {
         zone = 'B',
         track = 0,
         platform = vec4(650.0, 5650.0, 35.0, 315.0),  -- ESTIMATED
-        trackProgress = 0.70,
-        next = 'roxwood',
-        prev = 'del_perro',
-        isJunction = true,
-        connectsToTrack = 13
-    },
-
-    -- Zone C: Roxwood County
-    ['roxwood'] = {
-        name = 'Roxwood Central Station',
-        shortName = 'Roxwood',
-        zone = 'C',
-        track = 13,
-        platform = vec4(0.0, 0.0, 0.0, 0.0),  -- TBD
         trackProgress = 1.0,
-        next = nil,  -- Terminus
-        prev = 'paleto_junction'
+        next = nil,  -- Northern terminus
+        prev = 'del_perro',
+        isTerminus = true
     }
 }
 
@@ -303,15 +251,13 @@ Config.StationOrder = {
     'davis',
     'downtown',
     'del_perro',
-    'paleto_junction',
-    'roxwood'
+    'paleto_junction'
 }
 
 -- Zone station groupings
 Config.ZoneStations = {
     ['A'] = { 'lsia', 'davis', 'downtown', 'del_perro' },
-    ['B'] = { 'paleto_junction' },
-    ['C'] = { 'roxwood' }
+    ['B'] = { 'paleto_junction' }
 }
 ```
 
@@ -337,8 +283,7 @@ Config.ZoneStations = {
 | Davis | Downtown | ~3 min |
 | Downtown | Del Perro | ~4 min |
 | Del Perro | Paleto Junction | ~10 min |
-| Paleto Junction | Roxwood | ~8 min (via bridge) |
-| **LSIA** | **Roxwood (Full)** | **~27 min** |
+| **LSIA** | **Paleto Junction (Full)** | **~19 min** |
 
 ---
 
@@ -364,23 +309,18 @@ Standard Platform Layout:
 
 1. **Coordinate Verification**:
    - Platform coordinates need in-game verification to ensure trains stop correctly at platforms.
-   - Paleto Junction coordinates are **estimated** - verify at the actual bridge location.
+   - Paleto Junction coordinates are **estimated** - verify at the actual location.
 
-2. **Roxwood Station**:
-   - Coordinates TBD pending Roxwood MLO review for optimal placement along Track 13.
-   - The passenger train uses: `amb_statrac_loc` + `ambpepascarriage1/3`
-
-3. **Track Alignment**:
+2. **Track Alignment**:
    - All stations must be placed along actual GTA V train track paths.
    - Use native `GetNearestTrainTrackPosition()` to verify.
 
-4. **Paleto Junction**:
-   - This is where Track 0 (main line) and Track 13 (Roxwood passenger) intersect.
-   - Track 0 continues to Paleto Bay, Sandy Shores, Grapeseed (freight only).
-   - Track 13 branches NNE via the bridge into Roxwood County.
+3. **Paleto Junction**:
+   - Northern terminus of the passenger line on Track 0.
+   - Sandy Shores / Grapeseed (Track 12, freight only) branch east of the junction.
 
-5. **Future Expansion**:
-   - Sandy Shores and Grapeseed stations could be added later as a separate freight/local service line on Track 0.
+4. **Future Expansion**:
+   - Sandy Shores and Grapeseed stations could be added later as a separate freight/local service line.
 
 ---
 
@@ -398,14 +338,6 @@ The hybrid block signaling system divides tracks into virtual segments for colli
 | T0_SEG4 | Del Perro District | vec3(-800, -500, 35) | vec3(-1800, 200, 60) | ~2.5km |
 | T0_SEG5 | Great Ocean Highway | vec3(-1800, 200, 60) | vec3(-500, 4000, 50) | ~4km |
 | T0_SEG6 | Paleto Approach | vec3(-500, 4000, 50) | vec3(650, 5650, 35) | ~2km |
-
-### Track 13: Roxwood Passenger Line
-
-| Segment ID | Name | Start Coords | End Coords | Notes |
-|------------|------|--------------|------------|-------|
-| T13_SEG1 | Junction Departure | vec3(650, 5650, 35) | vec3(2400, 5900, 30) | Bridge approach |
-| T13_SEG2 | Roxwood Bridge | vec3(2400, 5900, 30) | vec3(2800, 6400, 45) | **CRITICAL CURVE** - Max 12 m/s |
-| T13_SEG3 | Roxwood Terminal | vec3(2800, 6400, 45) | vec3(3200, 6800, 50) | Station TBD |
 
 ### Track 12: Freight Line
 
