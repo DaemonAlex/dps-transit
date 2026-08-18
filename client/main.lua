@@ -2243,9 +2243,12 @@ RegisterNUICallback('emergencyStop', function(data, cb)
     cb({ success = true })
 end)
 
--- Keybind to toggle dispatcher panel (F7)
-RegisterKeyMapping('dispatch_panel', 'Toggle Transit Dispatch Panel', 'keyboard', 'F7')
-RegisterCommand('dispatch_panel', function()
+-- Dispatcher panel: staff tool - NO default keybind (F6/F7 collide with the
+-- police/ambulance job menus and others). Renamed from dispatch_panel so
+-- clients' persisted keybinds for the old command name are abandoned.
+-- Staff bind it in GTA Settings > Key Bindings > FiveM, or use /dispatch.
+RegisterKeyMapping('transit_dispatch_panel', 'Toggle Transit Dispatch Panel', 'keyboard', '')
+RegisterCommand('transit_dispatch_panel', function()
     ToggleDispatcherPanel()
 end, false)
 
