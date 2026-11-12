@@ -2,6 +2,44 @@
 
 A comprehensive multi-modal public transportation system for FiveM featuring automated train scheduling, virtual block signaling for collision prevention, dispatcher control panels, and real-time passenger tracking.
 
+## Status
+
+Not running on DelPerroSands. Replaced by [dps-trains](https://github.com/DaemonAlex/dps-trains),
+with [dps-transitapp](https://github.com/DaemonAlex/dps-transitapp) for arrival times on the phone.
+The code here is complete and last matched the live server on 18 August 2026.
+
+## What it is for
+
+GTA trains pass at random and never stop for a player. This script runs them to a timetable
+between named stations, sells tickets, and gives staff a panel to watch and stop trains. It also
+runs AI shuttle buses between stations that share no rail line.
+
+## On its own, and with other scripts
+
+**On its own.** Needs Qbox, `ox_lib` and `ox_target`. A player walks up to a station, targets the
+kiosk and buys a ticket or a day pass. The schedule board shows the next arrivals. The train
+pulls in, stops, and the player boards with `E`. Fares depend on the zone. Freight trains share
+the track. Block signals slow or stop a train when the section ahead is taken. Staff in a listed
+job open the dispatcher panel with `/dispatch` and can stop a train or lock a section of track.
+Tickets are held in server memory, so they are lost on a restart.
+
+**With ox_inventory.** A ticket is also a real `transit_ticket` item with the trip written on it.
+The server reads it back when the player joins, so it survives a restart. Add the `transit_ticket` item to the
+inventory first.
+
+**With qs-inventory.** The same ticket item, through qs-inventory. DelPerroSands does not run
+qs-inventory, so this path is not tested there.
+
+**With xsound.** Station announcements play as audio: next station, now arriving, doors closing.
+Without xsound the player gets text only.
+
+**With police or dispatch scripts.** The server export `EmergencyBrakeNearestTrain` lets another
+script stop the nearest train for an officer. No police script is wired in by default.
+
+**What it does not do.** It does not put arrival times on a phone. It does not use the
+dps-trains-stock engine, the dps-traintools seating, or the Roxwood line. Do not run it next to
+dps-trains: both spawn trains on the same tracks.
+
 ---
 
 ## Features
@@ -131,7 +169,8 @@ Authorized personnel can access the dispatcher control panel to monitor and cont
 
 ### Access Requirements
 
-Open with `F7` or `/dispatch` command. Requires one of the following jobs:
+Open with the `/dispatch` command. The panel has no default key (the F7 bind was removed on 18 August 2026).
+A player can set one in the GTA key bindings under "Toggle Transit Dispatch Panel". Requires one of the following jobs:
 - `police`, `sheriff`, `bcso`
 - `dps_dispatch`, `trainstaff`, `traindriver`
 - `management`, `admin`
@@ -219,7 +258,7 @@ Lock Priority Order:
    ```
    ensure ox_lib
    ensure ox_target
-   ensure qbx_core  # OR ensure qb-core / ensure es_extended
+   ensure qbx_core
    ensure dps-transit
    ```
 3. **Configure** framework in `config/config.lua` (optional - auto-detects by default):
@@ -235,10 +274,14 @@ Lock Priority Order:
 
 | Resource | Purpose |
 |----------|---------|
-| [qb-core](https://github.com/qbcore-framework/qb-core) OR [es_extended](https://github.com/esx-framework/esx_core) | Framework (one required) |
+| [qbx_core](https://github.com/Qbox-project/qbx_core) | Framework. `fxmanifest.lua` lists it as a hard dependency. |
 | [ox_lib](https://github.com/overextended/ox_lib) | UI, callbacks, keybinds |
 | [ox_target](https://github.com/overextended/ox_target) | Station interactions |
 | [ox_inventory](https://github.com/overextended/ox_inventory) | Ticket items (optional) |
+| xsound | Audio announcements (optional) |
+
+The bridge files for QBCore and ESX are still in `bridge/`. To use them, remove `qbx_core` from the
+`dependencies` list in `fxmanifest.lua`. They are not tested on DelPerroSands, which runs Qbox.
 
 ---
 
@@ -373,7 +416,7 @@ dps-transit/
 | Key | Action |
 |-----|--------|
 | `E` | Board/exit train when at station |
-| `F7` | Toggle dispatcher panel (authorized users) |
+| none by default | Toggle dispatcher panel (authorized users). Set a key in the GTA key bindings. |
 | `ESC` | Close dispatcher panel |
 
 ---
@@ -427,3 +470,45 @@ dps-transit/
 ## License
 
 This resource is provided for use on the DPS Roleplay server.
+
+---
+
+## Recent changes
+
+- **12 November 2026.** README: status, what it is for, how it works alone and with paid scripts, other DPS scripts. Fixed the dependency list and the dispatcher key.
+- **18 August 2026.** Version 2.8.0 imported from the live server: native Qbox bridge, one owner per train, checks on network events, Roxwood line removed.
+- **18 August 2026.** Dispatcher panel unbound from F7. The key command was renamed so old client binds stop firing.
+- **18 August 2026.** Line endings pinned in `.gitattributes`.
+
+## Author
+
+Made by [DaemonAlex](https://github.com/DaemonAlex) for DelPerroSands.
+
+## Other DPS scripts
+
+All of these are made for DelPerroSands and run together on one Qbox server. Each one works on
+its own. The ones marked "pairs with" do more when both are running.
+
+| Script | What it does |
+|---|---|
+| [dps-inventory](https://github.com/DaemonAlex/dps-inventory) | The inventory: ox_inventory with equipment slots, backpacks, armour plates and a self status panel, in the DelPerroSands colours. |
+| [dps-medical](https://github.com/DaemonAlex/dps-medical) | Patient records, illness and diagnostic tests. A companion to wasabi_ambulance. Pairs with dps-inventory: symptoms and diagnoses show on the status panel. |
+| [dps-insurance](https://github.com/DaemonAlex/dps-insurance) | Ties m-Insurance into the MDT, impound, hospital and medical chart. Pairs with dps-medical. |
+| [dps-studio](https://github.com/DaemonAlex/dps-studio) | Build rooms, doors and portals in game from one panel (`/studio`), with owners and managers so staff do not have to support them. |
+| [dps-shops](https://github.com/DaemonAlex/dps-shops) | Shop clerks who greet and react to a robbery, then player-owned shops. |
+| [dps-fleet](https://github.com/DaemonAlex/dps-fleet) | Vehicle browser and workshop on one panel: extras, liveries and mods for emergency vehicles. |
+| [dps-parking](https://github.com/DaemonAlex/dps-parking) | Parking with valet, impound, violations and reserved spots. |
+| [dps-vehiclepersistence](https://github.com/DaemonAlex/dps-vehiclepersistence) | Vehicles stay where they were parked. Pairs with dps-parking. |
+| [dps-towjob](https://github.com/DaemonAlex/dps-towjob) | Queue-based tow job with jg-mechanic integration. |
+| [dps-services](https://github.com/DaemonAlex/dps-services) | Request a tow and follow it live on the lb-phone and lb-tablet. Pairs with dps-towjob. |
+| [dps-autoshops](https://github.com/DaemonAlex/dps-autoshops) | Self-service repair shops when no mechanic is on duty. |
+| [dps-cityworker](https://github.com/DaemonAlex/dps-cityworker) | City infrastructure job and career. |
+| [dps-ainpcs](https://github.com/DaemonAlex/dps-ainpcs) | NPCs you can talk to, with trust, quests and intel. |
+| [dps-badpeds](https://github.com/DaemonAlex/dps-badpeds) | Police interaction with NPCs: stops, arrests, intel and jail records. |
+| [dps-gangwars](https://github.com/DaemonAlex/dps-gangwars) | Ambient gang NPCs, territory population and war reinforcements. |
+| [dps-rotations](https://github.com/DaemonAlex/dps-rotations) | Moves dealers, harvests and other spots on a fixed schedule. |
+| [dps-trains](https://github.com/DaemonAlex/dps-trains) | The train system. Pairs with dps-trains-stock, dps-traintools and dps-transitapp. |
+| [dps-transitapp](https://github.com/DaemonAlex/dps-transitapp) | Live train arrival boards on the lb-phone. |
+| [dps-faceplant](https://github.com/DaemonAlex/dps-faceplant) | City help, reports and staff tools on the lb-phone and lb-tablet. |
+| [dps-chat](https://github.com/DaemonAlex/dps-chat) | A command box for voice-only servers. No chat feed. |
+| [dps-filmmode](https://github.com/DaemonAlex/dps-filmmode) | One key hides every HUD layer and gives a smooth free camera for recording. |
